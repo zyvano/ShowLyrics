@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { 
+            background-color: #000; margin: 0; height: 100vh; overflow: hidden;
+            font-family: 'Arial', sans-serif; 
+            display: flex; flex-direction: column;
+        }
+        
+        /* LAYOUT */
+        #top-section {
+            flex: 1; /* Isi sisa ruang */
+            display: flex; justify-content: center; align-items: center;
+            padding: 0 40px; /* Padding kiri kanan aman */
+            text-align: center;
+            overflow: hidden; /* Sembunyikan kalau ada glitch dikit */
+            position: relative;
+        }
+        
+        #bottom-section {
+            height: 25vh; /* Next Lyrics Jauh lebih tinggi sekarang */
+            min-height: 100px;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: #111; color: #888;
+            border-top: 4px solid #333;
+            text-align: center;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        /* TEXT STYLES */
+        .current-text {
+            color: #fff; 
+            font-weight: 900; 
+            line-height: 1.1;
+            white-space: pre-wrap;
+            /* Font size diatur JS */
+            width: 100%;
+        }
+        
+        .next-label { 
+            font-size: 3vh; color: #ffc107; text-transform: uppercase; font-weight: bold; margin-bottom: 5px; 
+        }
+        
+        .next-text { 
+            font-weight: bold; line-height: 1.1; white-space: pre-wrap; color: #aaa; 
+            width: 100%;
+            /* Font size diatur JS juga */
+        }
+
+        /* CLOCK */
+        #clock {
+            position: absolute; top: 0; right: 0;
+            font-size: 5vh; font-weight: bold; color: #00ff00;
+            background: rgba(0,0,0,0.8); padding: 5px 20px; 
+            border-bottom-left-radius: 15px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="clock">00:00</div>
+
+    <div id="top-section">
+        <div id="curr-txt" class="current-text">WAITING...</div>
+    </div>
+
+    <div id="bottom-section">
+        <div class="next-label">NEXT:</div>
+        <div id="next-txt" class="next-text">Ready</div>
+    </div>
+
+    <script>
+        const ws = new WebSocket("ws://" + window.location.host + "/ws");
+        
+        const currEl = document.getElementById("curr-txt");
+        const nextEl = document.getElementById("next-txt");
+        const topSec = document.getElementById("top-section");
+        const botSec = document.getElementById("bottom-section");
+        const clockEl = document.getElementById("clock");
+
+        // Simpan Config Terakhir
+        let activeConfig = {
+            curr_size: 300, // Ini sekarang jadi MAX SIZE (Batas Atas)
+            next_size: 100  // Ini juga MAX SIZE buat Next
+        };
+
+        // JAM DIGITAL
+        setInterval(() => {
+            const now = new Date();
+            clockEl.innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }, 1000);
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            // 1. UPDATE TEKS
+            if (data.type === "update_state") {
+                const s = data.state;
+                
+                if (s.show) {
+                    currEl.innerText = s.text || "";
+                    nextEl.innerText = s.next_text || "";
+                    currEl.style.opacity = 1;
+                } else {
+                    currEl.style.opacity = 0.3;
+                }
+                // Trigger Auto Fit setiap ganti slide
+                fitText();
+            }
+
+            // 2. UPDATE CONFIG
+            if (data.type === "update_fb_config") {
+                const c = data.config;
+                activeConfig = c; // Update memori lokal
+
+                document.body.style.backgroundColor = c.bg_color;
+                currEl.style.color = c.curr_color;
+                nextEl.style.color = c.next_color;
+
+                if(c.layout === 'full') {
+                    botSec.style.display = 'none';
+                    topSec.style.height = '100vh';
+                } else {
+                    botSec.style.display = 'flex';
+                    topSec.style.height = 'auto'; 
+                }
+                // Trigger Auto Fit saat config berubah
+                fitText();
+            }
+        };
+
+        // --- LOGIC AUTO FIT ---
+        function fitText() {
+            // 1. Fit Current Text
+            resizeElement(currEl, topSec, activeConfig.curr_size || 300);
+            
+            // 2. Fit Next Text (Biar dia juga muat kalau kepanjangan)
+            if(botSec.style.display !== 'none') {
+                // Kurangi dikit max-height botSec buat label "NEXT:"
+                resizeElement(nextEl, botSec, activeConfig.next_size || 100, 40); 
+            }
+        }
+
+        function resizeElement(el, container, maxSize, heightPadding = 0) {
+            if (!el.innerText) return;
+
+            let size = maxSize; // Mulai dari ukuran Max (Settingan User)
+            el.style.fontSize = size + "px";
+
+            // Loop: Kecilin font selama teks masih meluap dari wadahnya
+            // Cek scrollHeight (Tinggi Teks) vs clientHeight (Tinggi Wadah)
+            while ( 
+                (el.scrollHeight > (container.clientHeight - heightPadding) || 
+                 el.scrollWidth > container.clientWidth) && 
+                size > 20 // Jangan lebih kecil dari 20px
+            ) {
+                size -= 5; // Turunkan 5px per step
+                el.style.fontSize = size + "px";
+            }
+        }
+
+        // Fit ulang kalau window di-resize
+        window.addEventListener('resize', fitText);
+
+    </script>
+</body>
+</html>

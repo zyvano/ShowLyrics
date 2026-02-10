@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link id="lt-font-link" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap">
+    <style>
+        body { 
+            margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden;
+            background-color: transparent; 
+        }
+
+        #lt-container {
+            position: absolute; left: 0; right: 0;
+            text-align: center; padding: 20px 50px;
+            transition: all 0.3s ease-out; opacity: 0;
+        }
+
+        .lt-text {
+            font-family: 'Montserrat', sans-serif; /* Default */
+            font-weight: 900;
+            text-transform: uppercase;
+            color: #fff;
+            line-height: 1.2;
+            word-wrap: break-word;
+            text-shadow: 3px 3px 0px #000; 
+            transition: opacity 0.5s ease;
+        }
+        
+        .lt-active { opacity: 1 !important; }
+    </style>
+</head>
+<body>
+
+    <div id="lt-container">
+        <div id="lt-text" class="lt-text"></div>
+    </div>
+
+    <script>
+        const ws = new WebSocket("ws://" + window.location.host + "/ws");
+        const container = document.getElementById("lt-container");
+        const textEl = document.getElementById("lt-text");
+        const fontLink = document.getElementById("lt-font-link");
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            // 1. TERIMA TEKS
+            if (data.type === "update_state") {
+                const s = data.state;
+                if (s.show) {
+                    textEl.innerHTML = s.text.replace(/\n/g, "<br>");
+                    container.classList.add("lt-active");
+                } else {
+                    container.classList.remove("lt-active");
+                }
+            }
+
+            // 2. TERIMA CONFIG (Preset)
+            if (data.type === "update_lt_config") {
+                const c = data.config;
+                
+                // Update Posisi
+                container.style.top = "auto"; container.style.bottom = "auto"; container.style.transform = "none";
+                if (c.position === 'bottom') container.style.bottom = c.margin_y + "px";
+                else if (c.position === 'top') container.style.top = c.margin_y + "px";
+                else if (c.position === 'center') {
+                    container.style.top = "50%";
+                    container.style.transform = `translateY(calc(-50% + ${c.margin_y}px))`;
+                }
+
+                // Update Style
+                textEl.style.fontSize = c.size + "px";
+                textEl.style.color = c.color;
+                textEl.style.textShadow = `${c.shadow_x}px ${c.shadow_y}px 0px ${c.shadow_color}`;
+                
+                // Update Font Dinamis
+                if (c.font) {
+                    let fontName = c.font;
+                    // Load dari Google Fonts kalau bukan custom/standard
+                    if (fontName !== 'custom' && !fontName.includes('sans-serif')) {
+                        fontLink.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, '+')}:wght@400;700;900&display=swap`;
+                    }
+                    if (fontName === 'custom') fontName = 'sans-serif';
+                    textEl.style.fontFamily = fontName;
+                }
+            }
+        };
+    </script>
+</body>
+</html>

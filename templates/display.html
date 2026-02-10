@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link id="google-font-link" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap">
+    <style>
+        :root {
+            --glow-color: rgba(255, 255, 255, 0.8);
+            --main-color: #ffffff;
+            --fade-speed: 0.8s;
+            --main-font: 'Cinzel', serif;
+        }
+
+        html {
+            background-color: transparent;
+        }
+
+        body {
+            /* Ganti hitam jadi transparent biar tembus pandang di OBS */
+            background-color: transparent; 
+            margin: 0; height: 100vh;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; user-select: none;
+            perspective: 1000px;
+        }
+
+        /* FOG LAYER */
+        .fog-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; z-index: 0; pointer-events: none; }
+        .fog-layer { position: absolute; height: 100vh; width: 300vw; background: url('https://raw.githubusercontent.com/danielstuart14/CSS_FOG_ANIMATION/master/fog1.png') repeat-x; background-size: contain; animation: fogMove 60s linear infinite; opacity: 0.3; filter: blur(5px); }
+        .fog-layer.two { background: url('https://raw.githubusercontent.com/danielstuart14/CSS_FOG_ANIMATION/master/fog2.png') repeat-x; background-size: contain; animation: fogMove 40s linear infinite reverse; z-index: 1; opacity: 0.2; }
+        @keyframes fogMove { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-200vw, 0, 0); } }
+
+        /* SCENE CONTAINER */
+        #scene-container { width: 100%; height: 100%; position: relative; display: flex; justify-content: center; align-items: center; z-index: 10; will-change: transform; }
+        .move-in { animation: moveZoomIn 20s linear infinite alternate; }
+        .move-out { animation: moveZoomOut 20s linear infinite alternate; }
+        .move-stay { animation: moveDrift 15s ease-in-out infinite alternate; }
+        @keyframes moveZoomIn { 0% { transform: scale(1); } 100% { transform: scale(1.15); } }
+        @keyframes moveZoomOut { 0% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        @keyframes moveDrift { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+
+        /* LYRIC GROUP */
+        .lyric-group { position: absolute; width: 100%; padding: 0 50px; display: flex; justify-content: center; align-items: center; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+        .lyric-group.active { opacity: 1; }
+
+        /* ============================== */
+        /* THEME LIBRARY (CSS)       */
+        /* ============================== */
+
+        /* 1. DEFAULT (Standard Glow) */
+        .style-default .lyric-text {
+            color: var(--main-color);
+            text-shadow: 0 0 20px rgba(255,255,255,0.6), 0 0 40px var(--main-color), 0 0 80px var(--main-color);
+        }
+
+        /* 2. HEAVENLY (Deep Worship) - White core, Blue Glow */
+        .style-heaven .lyric-text {
+            color: #fff;
+            text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 40px #00a8ff, 0 0 80px #00a8ff, 0 0 120px #00a8ff;
+        }
+
+        /* 3. FIRE EMBER (Praise/Fire) */
+        .style-fire .lyric-text {
+            color: #fff;
+            text-shadow: 0 0 5px #fff, 0 0 15px #ffcc00, 0 0 30px #ff6600, 0 0 50px #cc3300;
+        }
+
+        /* 4. SILVER METAL (Cinematic) */
+        .style-metal .lyric-text {
+            background: linear-gradient(to bottom, #eeeeee 0%, #cccccc 50%, #eeeeee 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            filter: drop-shadow(0 0 5px rgba(255,255,255,0.3));
+        }
+
+        /* 5. ROYAL GOLD (Classic Hymn) */
+        .style-gold .lyric-text {
+            color: #FFD700;
+            background: linear-gradient(to bottom, #cfc09f 22%,#634f2c 24%, #cfc09f 26%, #cfc09f 27%,#ffecb3 40%,#3a2c0f 78%); 
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
+        }
+
+        /* 6. CYBER GLITCH (Youth/Modern) */
+        .style-cyber .lyric-text {
+            color: #fff;
+            text-shadow: 3px 0px 0px #00e5ff, -3px 0px 0px #ff0055;
+        }
+
+        /* 7. SOFT MIST (Deep/Mystery) */
+        .style-mist .lyric-text {
+            color: rgba(255,255,255,0.8);
+            filter: blur(1px);
+            text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(255,255,255,0.4);
+        }
+
+        /* 8. AURORA BOREALIS (Animated Color) */
+        .style-aurora .lyric-text {
+            background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 50%, #ff5acd 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: shine 5s linear infinite;
+        }
+        @keyframes shine { to { background-position: 200% center; } }
+
+        /* 9. BOLD 3D (Impact) */
+        .style-3d .lyric-text {
+            color: var(--main-color);
+            text-shadow: 0 1px 0 #ccc, 0 2px 0 #c9c9c9, 0 3px 0 #bbb, 0 4px 0 #b9b9b9, 0 5px 0 #aaa, 0 6px 1px rgba(0,0,0,.1), 0 20px 20px rgba(0,0,0,.15);
+        }
+
+        /* 10. NEON OUTLINE (Retro) */
+        .style-neon .lyric-text {
+            color: transparent;
+            -webkit-text-stroke: 2px var(--main-color);
+            text-shadow: 0 0 20px var(--main-color), 0 0 40px var(--main-color);
+        }
+
+        /* 11. RETRO SYNTH (Vintage 80s) */
+        .style-retro .lyric-text {
+            background: linear-gradient(to bottom, #ff00cc 0%, #333399 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            filter: drop-shadow(2px 2px 0px #fff);
+        }
+
+        /* 12. LONG SHADOW (Flat Modern) */
+        .style-long .lyric-text {
+            color: var(--main-color);
+            text-shadow: 1px 1px #333, 2px 2px #333, 3px 3px #333, 4px 4px #333, 5px 5px #333, 6px 6px #333, 7px 7px #333, 8px 8px #333;
+        }
+
+        /* 13. GLASSY (Elegant Clean) */
+        .style-glass .lyric-text {
+            color: rgba(255,255,255,0.1);
+            -webkit-text-stroke: 1px #fff;
+            text-shadow: 2px 2px 10px rgba(255,255,255,0.5);
+        }
+
+        /* 14. DOUBLE OUTLINE (Sporty) */
+        .style-double .lyric-text {
+            color: transparent;
+            -webkit-text-stroke: 2px #fff;
+            filter: drop-shadow(0 0 2px var(--main-color));
+        }
+
+        /* 15. CLEAN MODERN (Minimalist) */
+        .style-clean .lyric-text {
+            color: var(--main-color);
+            letter-spacing: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        /* ============================== */
+        /* BASE PROPERTIES         */
+        /* ============================== */
+        .lyric-text {
+            position: relative; z-index: 5;
+            font-family: var(--main-font); /* Font Dinamis */
+            font-size: 5vw; font-weight: 700; line-height: 1.3;
+            text-align: center;
+            white-space: pre-wrap; word-break: normal; overflow-wrap: break-word; max-width: 90vw;
+        }
+
+        /* FX LIBRARY (Code Transisi yg udah fix) */
+        .fx-track .lyric-text { animation: trackIn var(--fade-speed) ease-out forwards; white-space: pre !important; max-width: none !important; width: auto; }
+        @keyframes trackIn { 0% { letter-spacing: 0.3em; opacity: 0; filter: blur(10px); } 100% { letter-spacing: normal; opacity: 1; filter: blur(0); } }
+        .fx-blur .lyric-text { animation: blurIn var(--fade-speed) cubic-bezier(0.23, 1, 0.32, 1) forwards; }
+        @keyframes blurIn { 0% { filter: blur(30px); transform: scale(1.1); opacity: 0; } 100% { filter: blur(0); transform: scale(1); opacity: 1; } }
+        .fx-mask .lyric-text { animation: maskRise var(--fade-speed) cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes maskRise { 0% { clip-path: inset(100% -50% -50% -50%); transform: translateY(60px); opacity: 0; } 100% { clip-path: inset(-50% -50% -50% -50%); transform: translateY(0); opacity: 1; } }
+        .fx-burst .lyric-text { animation: glowBurst var(--fade-speed) ease-out forwards; }
+        @keyframes glowBurst { 0% { opacity: 0; transform: scale(0.9); filter: brightness(3); } 40% { opacity: 1; transform: scale(1.05); filter: brightness(2); } 100% { opacity: 1; transform: scale(1); filter: brightness(1); } }
+        .fx-stagger .lyric-text span { opacity: 0; display: inline-block; transform: translateY(30px); animation: staggerUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        @keyframes staggerUp { to { opacity: 1; transform: translateY(0); } }
+        .fx-echo .lyric-text { animation: echoMerge var(--fade-speed) cubic-bezier(0.25, 1, 0.5, 1) forwards; }
+        @keyframes echoMerge { 0% { opacity: 0; transform: scale(2); filter: blur(20px); letter-spacing: 0.2em; } 100% { opacity: 1; transform: scale(1); filter: blur(0); letter-spacing: normal; } }
+        .fx-flip3d .lyric-text { animation: flipDown var(--fade-speed) cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; transform-origin: top center; }
+        @keyframes flipDown { 0% { opacity: 0; transform: rotateX(-90deg); } 100% { opacity: 1; transform: rotateX(0deg); } }
+        .fx-slide .lyric-text { animation: motionSlide var(--fade-speed) cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        @keyframes motionSlide { 0% { opacity: 0; transform: translateX(-150px) skewX(-20deg); } 100% { opacity: 1; transform: translateX(0) skewX(0); } }
+        .fx-spin .lyric-text span { opacity: 0; display: inline-block; animation: letterSpin 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; transform-origin: center center; }
+        @keyframes letterSpin { 0% { opacity: 0; transform: rotateY(90deg) scale(0.8); filter: blur(5px); } 100% { opacity: 1; transform: rotateY(0deg) scale(1); filter: blur(0); } }
+        .fx-focus .lyric-text { animation: focusExp var(--fade-speed) ease-out forwards; white-space: pre-wrap; width: 100%; max-width: 90vw; }
+        @keyframes focusExp { 0% { opacity: 0; letter-spacing: -0.2em; filter: blur(15px); transform: scale(0.9); } 100% { opacity: 1; letter-spacing: normal; filter: blur(0); transform: scale(1); } }
+        .fx-neon .lyric-text { animation: neonOn 2.0s linear forwards; }
+        @keyframes neonOn { 0% { opacity: 0; filter: brightness(0); } 10% { opacity: 0; filter: brightness(0); } 15% { opacity: 0.4; filter: brightness(0.5); } 20% { opacity: 0; filter: brightness(0); } 25% { opacity: 1; filter: brightness(1.5); } 30% { opacity: 0.2; filter: brightness(0.5); } 35% { opacity: 1; filter: brightness(2); } 50% { opacity: 0.8; filter: brightness(1); } 100% { opacity: 1; filter: brightness(1); } }
+        .fx-wave .lyric-text span { opacity: 0; display: inline-block; animation: liquidWave 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        @keyframes liquidWave { 0% { opacity: 0; transform: translateY(40px) scaleY(1.5); filter: blur(5px); } 100% { opacity: 1; transform: translateY(0) scaleY(1); filter: blur(0); } }
+        .fx-pop .lyric-text { animation: elasticPop 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; transform-origin: center center; }
+        @keyframes elasticPop { 0% { opacity: 0; transform: scale(0.3); } 100% { opacity: 1; transform: scale(1); } }
+        .fx-stretch .lyric-text { animation: cinemaStretch 0.9s cubic-bezier(0.25, 1, 0.5, 1) forwards; transform-origin: center center; }
+        @keyframes cinemaStretch { 0% { opacity: 0; transform: scaleY(0) scaleX(1.2); filter: blur(10px); } 100% { opacity: 1; transform: scaleY(1) scaleX(1); filter: blur(0); } }
+        .fx-gauss .lyric-text span { opacity: 0; display: inline-block; animation: gaussMerge 0.8s ease-out forwards; }
+        @keyframes gaussMerge { 0% { opacity: 0; transform: scale(1.5); filter: blur(15px); letter-spacing: 0.1em; } 100% { opacity: 1; transform: scale(1); filter: blur(0); letter-spacing: normal; } }
+        .fx-glitch .lyric-text span { opacity: 0; display: inline-block; animation: softGlitch 0.4s steps(3) forwards; }
+        @keyframes softGlitch { 0% { opacity: 0; transform: translateX(-10px) skewX(20deg); filter: blur(2px); } 50% { opacity: 0.5; transform: translateX(5px) skewX(-10deg); } 100% { opacity: 1; transform: translateX(0) skewX(0); filter: blur(0); } }
+        .fx-fade .lyric-text { animation: fadeIn var(--fade-speed) ease-in-out forwards; }
+        @keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+
+        /* GHOST (BACKGROUND AURA) - ADAPTIVE */
+        .lyric-ghost {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            display: flex; justify-content: center; align-items: center;
+            color: var(--main-color);
+            font-family: var(--main-font); /* Font Dinamis */
+            font-size: 5vw; font-weight: 700; line-height: 1.3;
+            text-align: center; z-index: 4;
+            filter: blur(30px); opacity: 0.5; mix-blend-mode: screen;
+            white-space: pre-wrap; word-break: normal; overflow-wrap: break-word; max-width: 90vw;
+            animation: breathe 6s ease-in-out infinite;
+        }
+        
+        /* Modifikasi Aura Ghost per Theme */
+        .style-heaven .lyric-ghost { color: #00a8ff; opacity: 0.6; filter: blur(40px); }
+        .style-fire .lyric-ghost { color: #ff6600; opacity: 0.7; filter: blur(35px); }
+        .style-clean .lyric-ghost, .style-glass .lyric-ghost { display: none; }
+        .style-neon .lyric-ghost { -webkit-text-stroke: 1px var(--main-color); filter: blur(20px); opacity: 0.8; }
+        .style-gold .lyric-ghost { color: #FFD700; opacity: 0.4; }
+        .style-cyber .lyric-ghost { color: #00e5ff; opacity: 0.3; }
+        .style-mist .lyric-ghost { filter: blur(50px); opacity: 0.3; }
+        .style-aurora .lyric-ghost { background: linear-gradient(90deg, #00d2ff, #ff5acd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; opacity: 0.4; }
+
+        .fx-track .lyric-ghost { white-space: pre !important; max-width: none !important; width: auto; }
+        @keyframes breathe { 0%, 100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.02); } }
+    </style>
+</head>
+<body>
+    <div class="fog-wrapper"><div class="fog-layer"></div><div class="fog-layer two"></div></div>
+    <div id="scene-container">
+        <div id="layer-a" class="lyric-group"><div class="lyric-ghost"></div><div class="lyric-text"></div></div>
+        <div id="layer-b" class="lyric-group"><div class="lyric-ghost"></div><div class="lyric-text"></div></div>
+    </div>
+    <script>
+        const ws = new WebSocket("ws://" + window.location.host + "/ws");
+        const scene = document.getElementById("scene-container");
+        const fontLink = document.getElementById("google-font-link");
+        const layerA = document.getElementById("layer-a");
+        const layerB = document.getElementById("layer-b");
+        let activeLayer = null;
+        function startKeepAlive() { const ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') { document.body.addEventListener('click', () => { ctx.resume(); }, { once: true }); } const osc = ctx.createOscillator(); const gain = ctx.createGain(); osc.frequency.value = 1; gain.gain.value = 0.0001; osc.connect(gain); gain.connect(ctx.destination); osc.start(); } startKeepAlive();
+
+        ws.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            if (data.type === "update_state") {
+                const s = data.state;
+                
+                // UPDATE FONT
+                if (document.body.style.getPropertyValue('--main-font') !== s.font) {
+                    let fontName = s.font;
+                    if(s.font !== 'custom' && !s.font.includes('sans-serif')) {
+                        fontLink.href = `https://fonts.googleapis.com/css2?family=${s.font.replace(/ /g, '+')}:wght@300;400;700;900&display=swap`;
+                    }
+                    if (s.font === 'custom') fontName = 'sans-serif'; 
+                    document.body.style.setProperty('--main-font', fontName);
+                }
+
+                document.body.style.setProperty('--main-color', s.color);
+                document.body.style.setProperty('--glow-int', s.glow / 50);
+                document.body.style.setProperty('--fade-speed', s.fade + "s");
+
+                scene.classList.remove('move-in', 'move-out', 'move-stay');
+                void scene.offsetWidth; 
+                if (s.zoom === 'in') scene.classList.add('move-in'); else if (s.zoom === 'out') scene.classList.add('move-out'); else scene.classList.add('move-stay');
+
+                let fxClass = 'fx-fade';
+                if(s.trans === 'blur') fxClass = 'fx-blur'; if(s.trans === 'mask') fxClass = 'fx-mask'; if(s.trans === 'stagger') fxClass = 'fx-stagger'; if(s.trans === 'track') fxClass = 'fx-track'; if(s.trans === 'burst') fxClass = 'fx-burst'; if(s.trans === 'type') fxClass = 'fx-type'; if(s.trans === 'echo') fxClass = 'fx-echo'; if(s.trans === 'flip3d') fxClass = 'fx-flip3d'; if(s.trans === 'slide') fxClass = 'fx-slide'; if(s.trans === 'spin') fxClass = 'fx-spin'; if(s.trans === 'focus') fxClass = 'fx-focus'; if(s.trans === 'neon') fxClass = 'fx-neon'; if(s.trans === 'wave') fxClass = 'fx-wave'; if(s.trans === 'pop') fxClass = 'fx-pop'; if(s.trans === 'stretch') fxClass = 'fx-stretch'; if(s.trans === 'gauss') fxClass = 'fx-gauss'; if(s.trans === 'glitch') fxClass = 'fx-glitch';
+
+                // UPDATE THEME CLASS
+                let styleClass = 'style-default';
+                if(s.theme === '3d') styleClass = 'style-3d';
+                if(s.theme === 'clean') styleClass = 'style-clean';
+                if(s.theme === 'neon') styleClass = 'style-neon';
+                if(s.theme === 'gold') styleClass = 'style-gold';
+                // NEW THEMES
+                if(s.theme === 'heaven') styleClass = 'style-heaven';
+                if(s.theme === 'fire') styleClass = 'style-fire';
+                if(s.theme === 'metal') styleClass = 'style-metal';
+                if(s.theme === 'cyber') styleClass = 'style-cyber';
+                if(s.theme === 'mist') styleClass = 'style-mist';
+                if(s.theme === 'aurora') styleClass = 'style-aurora';
+                if(s.theme === 'retro') styleClass = 'style-retro';
+                if(s.theme === 'long') styleClass = 'style-long';
+                if(s.theme === 'glass') styleClass = 'style-glass';
+                if(s.theme === 'double') styleClass = 'style-double';
+
+                const newText = s.show ? s.text : ""; 
+                let nextLayer;
+                if (!activeLayer) { nextLayer = layerA; } else {
+                    const currentText = activeLayer.querySelector(".lyric-text").innerText;
+                    if (currentText === newText && s.show) return;
+                    nextLayer = (activeLayer === layerA) ? layerB : layerA;
+                }
+
+                nextLayer.className = `lyric-group ${styleClass}`; 
+                void nextLayer.offsetWidth; 
+                nextLayer.classList.add(fxClass); 
+
+                if (newText) {
+                    const txtEl = nextLayer.querySelector(".lyric-text");
+                    const gstEl = nextLayer.querySelector(".lyric-ghost");
+                    const splitCharEffects = ['fx-stagger', 'fx-type', 'fx-spin', 'fx-wave', 'fx-gauss', 'fx-glitch'];
+                    
+                    if (splitCharEffects.includes(fxClass)) {
+                        const words = newText.split(' ');
+                        const html = words.map(word => {
+                            const chars = word.split('').map(c => `<span>${c}</span>`).join('');
+                            return `<span style="display: inline-block; white-space: nowrap;">${chars}</span>`;
+                        }).join(' '); 
+                        txtEl.innerHTML = html;
+                        gstEl.innerText = newText;
+                        const allChars = txtEl.querySelectorAll('span span');
+                        let delayBase = 50; 
+                        if(s.speed === '15s') delayBase = 20; if(s.speed === '60s') delayBase = 80;
+                        allChars.forEach((char, i) => { char.style.animationDelay = (i * delayBase) + "ms"; });
+                    } else {
+                        txtEl.innerText = newText;
+                        gstEl.innerText = newText;
+                    }
+                    nextLayer.classList.add("active");
+                    if(activeLayer) activeLayer.classList.remove("active");
+                } else {
+                    if(activeLayer) activeLayer.classList.remove("active");
+                }
+                activeLayer = nextLayer;
+            }
+        };
+    </script>
+</body>
+</html>

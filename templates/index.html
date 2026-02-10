@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Worship Engine - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Lato:wght@400;700&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #050505;
+            color: #ddd; /* Warna teks lebih terang dikit */
+            font-family: 'Lato', sans-serif;
+            margin: 0;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at top center, #1a1a1a 0%, #000 60%);
+            font-size: 16px; /* Base font size */
+        }
+
+        /* HEADER */
+        .header { text-align: center; padding: 50px 20px; animation: fadeIn 1s ease-out; }
+        .logo-img { width: 100px; height: 100px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(255,255,255,0.2)); margin-bottom: 15px; }
+        h1 { font-family: 'Cinzel', serif; font-size: 3rem; margin: 0; letter-spacing: 5px; background: linear-gradient(to right, #fff, #aaa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .subtitle { color: #888; font-size: 1.1em; letter-spacing: 3px; margin-top: 10px; text-transform: uppercase; font-weight: bold; }
+
+        /* MENU GRID (BUTTONS) */
+        .card-container {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Lebih lebar */
+            gap: 20px; width: 90%; max-width: 1200px; margin-bottom: 60px;
+        }
+
+        .card {
+            background: #111; border: 1px solid #333; border-radius: 12px; padding: 25px;
+            text-align: center; text-decoration: none; color: white;
+            transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 140px;
+        }
+        .card:hover { transform: translateY(-5px); background: #1a1a1a; border-color: #555; }
+        
+        .card-icon { font-size: 2.5rem; margin-bottom: 15px; } /* Ikon Gede */
+        .card span { font-size: 1.3rem; font-weight: bold; margin-bottom: 8px; color: #fff; letter-spacing: 0.5px; } /* Judul Gede */
+        .card small { color: #888; font-size: 0.9rem; line-height: 1.4; font-weight: normal; } /* Desc Gede */
+
+        /* Card Colors */
+        .card.ctrl { border-bottom: 4px solid #007bff; } .card.ctrl:hover { box-shadow: 0 5px 20px rgba(0, 123, 255, 0.3); }
+        .card.res { border-bottom: 4px solid #6f42c1; } .card.res:hover { box-shadow: 0 5px 20px rgba(111, 66, 193, 0.4); }
+        .card.disp { border-bottom: 4px solid #28a745; } .card.disp:hover { box-shadow: 0 5px 20px rgba(40, 167, 69, 0.3); }
+        .card.lt { border-bottom: 4px solid #ffc107; } .card.lt:hover { box-shadow: 0 5px 20px rgba(255, 193, 7, 0.3); }
+        .card.fb { border-bottom: 4px solid #dc3545; } .card.fb:hover { box-shadow: 0 5px 20px rgba(220, 53, 69, 0.3); }
+
+        /* DOCS SECTION */
+        .docs-wrapper { width: 90%; max-width: 1200px; margin-bottom: 80px; }
+        .section-title { 
+            font-size: 1.8rem; color: #fff; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 30px; 
+            font-weight: bold; letter-spacing: 2px; display: flex; justify-content: space-between; align-items: flex-end;
+            font-family: 'Cinzel', serif;
+        }
+        
+        .tutorial-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 25px; }
+        
+        .tut-card { 
+            background: #0f0f0f; border: 1px solid #222; border-radius: 8px; padding: 25px; 
+            position: relative; overflow: hidden; transition: 0.2s;
+        }
+        .tut-card:hover { border-color: #555; background: #141414; }
+        
+        .tut-num { position: absolute; top: -15px; right: -5px; font-size: 4rem; font-weight: 900; color: #1a1a1a; z-index: 0; pointer-events: none; }
+        
+        .tut-card h3 { margin: 0 0 15px 0; color: #fff; font-size: 1.2rem; display: flex; align-items: center; gap: 10px; position: relative; z-index: 1;}
+        .tut-card p { font-size: 1rem; color: #aaa; line-height: 1.6; margin-bottom: 10px; position: relative; z-index: 1; }
+        .tut-card li { font-size: 0.95rem; color: #ccc; line-height: 1.6; margin-bottom: 8px; position: relative; z-index: 1; }
+        .tut-card ul { padding-left: 20px; margin: 0; }
+        
+        /* KEYBOARD KEY STYLE */
+        kbd { 
+            background: #333; color: #fff; padding: 4px 8px; border-radius: 4px; 
+            font-family: 'Fira Code', monospace; font-size: 0.9em; 
+            border-bottom: 3px solid #111; display: inline-block; min-width: 20px; text-align: center;
+            font-weight: bold;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <img src="/static/logo.png" class="logo-img" alt="Logo">
+        <h1>WORSHIP ENGINE</h1>
+        <div class="subtitle">Multimedia App</div>
+    </div>
+
+    <div class="card-container">
+        <a href="/control" target="_blank" class="card ctrl">
+            <div class="card-icon">🎛️</div>
+            <span>Controller</span>
+            <small>Main Operator Panel</small>
+        </a>
+        <a href="/resolume" target="_blank" class="card res">
+            <div class="card-icon">🎚️</div>
+            <span>Resolume+</span>
+            <small>Hybrid Panel + OSC Grid</small>
+        </a>
+        <a href="/display" target="_blank" class="card disp">
+            <div class="card-icon">🖥️</div>
+            <span>Display</span>
+            <small>Cinematic Output (Projector)</small>
+        </a>
+        <a href="/lowerthird" target="_blank" class="card lt">
+            <div class="card-icon">📺</div>
+            <span>Lower Third</span>
+            <small>Overlay for OBS / Live Stream</small>
+        </a>
+        <a href="/foldback" target="_blank" class="card fb">
+            <div class="card-icon">🎤</div>
+            <span>Foldback</span>
+            <small>Stage Monitor for Singers</small>
+        </a>
+    </div>
+
+    <div class="docs-wrapper">
+        <div class="section-title">
+            <span>📘 MANUAL BOOK</span>
+            <span style="font-size: 0.5em; color: #666; font-family: sans-serif; font-weight: normal;">CHECKPOINT 6 BUILD</span>
+        </div>
+        
+        <div class="tutorial-grid">
+            
+            <div class="tut-card">
+                <div class="tut-num">01</div>
+                <h3>📂 Mass Import System</h3>
+                <p>Import ratusan lagu sekaligus tanpa capek.</p>
+                <ul>
+                    <li>Siapkan file <code>.txt</code> (Nama File = Judul Lagu).</li>
+                    <li>Gunakan <b>Double Enter</b> untuk memisahkan slide.</li>
+                    <li>Klik <b>📂 Batch Import</b> di Controller.</li>
+                    <li>Pilih semua file (Ctrl+A) -> Open.</li>
+                    <li>Sistem otomatis membersihkan spasi berlebih.</li>
+                </ul>
+            </div>
+
+            <div class="tut-card">
+                <div class="tut-num">02</div>
+                <h3>🔍 Deep Search Technology</h3>
+                <p>Lupa judul lagu? Cari pakai liriknya.</p>
+                <ul>
+                    <li>Search Bar memindai <b>Judul</b> DAN <b>Isi Lirik</b>.</li>
+                    <li><b>Fuzzy Match:</b> Mengabaikan titik, koma, dan spasi.</li>
+                    <li>Contoh: Ketik "bapa engkau" akan menemukan "Bapa, Engkau sungguh baik".</li>
+                </ul>
+            </div>
+
+            <div class="tut-card">
+                <div class="tut-num">03</div>
+                <h3>⌨️ Navigation Shortcuts</h3>
+                <p>Kontrol cepat saat ibadah berlangsung.</p>
+                <ul>
+                    <li><kbd>⬅</kbd> / <kbd>➡</kbd> : Next or Previous Slide.</li>
+                    <li><kbd>CTRL + C</kbd> : <b>Clear Screen</b> (Teks hilang).</li>
+                </ul>
+            </div>
+
+            <div class="tut-card">
+                <div class="tut-num">04</div>
+                <h3>🏷️ Rapid Tagging (Shift)</h3>
+                <p>Warnai slide untuk membedakan Verse/Chorus.</p>
+                <ul>
+                    <li>Klik slide, lalu tekan kombinasi:</li>
+                    <li><kbd>Shift</kbd> + <kbd>V</kbd> : Tag <b>Verse</b> (Biru).</li>
+                    <li><kbd>Shift</kbd> + <kbd>C</kbd> : Tag <b>Chorus</b> (Merah).</li>
+                    <li><kbd>Shift</kbd> + <kbd>P</kbd> : Tag <b>Pre-Chorus</b> (Kuning).</li>
+                    <li><kbd>Shift</kbd> + <kbd>B</kbd> : Tag <b>Bridge</b> (Hijau).</li>
+                </ul>
+            </div>
+
+            <div class="tut-card">
+                <div class="tut-num">05</div>
+                <h3>🚀 Hotkey Jumps</h3>
+                <p>Lompat ke bagian lagu tanpa nyari slide manual.</p>
+                <ul>
+                    <li><kbd>V</kbd> : Lompat ke Verse pertama.</li>
+                    <li><kbd>C</kbd> : Lompat ke Chorus pertama.</li>
+                    <li><kbd>B</kbd> : Lompat ke Bridge pertama.</li>
+                    <li>Sangat berguna saat WL tiba-tiba pindah alur.</li>
+                </ul>
+            </div>
+
+            <div class="tut-card">
+                <div class="tut-num">06</div>
+                <h3>✏️ Quick Edit & Delete</h3>
+                <p>Ada typo pas live? Jangan panik.</p>
+                <ul>
+                    <li><b>Klik Kanan</b> pada kotak lirik di Grid.</li>
+                    <li>Edit teks di popup -> Enter -> Live update.</li>
+                    <li><b>Hapus Slide:</b> Kosongkan teks di popup edit, lalu OK. Slide akan dihapus dari antrian.</li>
+                </ul>
+            </div>
+
+            <div class="tut-card">
+                <div class="tut-num">07</div>
+                <h3>💾 Preset System (Memory)</h3>
+                <p>Simpan gaya tampilan untuk Worship, Kotbah, dll.</p>
+                <ul>
+                    <li>Atur Font, Warna, Glow, Transisi.</li>
+                    <li>Klik <b>+ SAVE</b> di menu Settings.</li>
+                    <li>Klik <b>★ DEFAULT</b> agar settingan ini otomatis dimuat setiap kali aplikasi dibuka.</li>
+                </ul>
+            </div>
+
+            <div class="tut-card">
+                <div class="tut-num">08</div>
+                <h3>🎨 Themes & Motion</h3>
+                <p>15+ Tema bawaan siap pakai.</p>
+                <ul>
+                    <li><b>Heavenly:</b> Blue Glow (Worship).</li>
+                    <li><b>Fire:</b> Red/Orange Ember (Praise).</li>
+                    <li><b>Metal/Glass:</b> Cinematic & Elegant.</li>
+                    <li><b>Transitions:</b> Blur, Motion Slide, Glitch, Liquid Wave.</li>
+                </ul>
+            </div>
+
+            <div class="tut-card">
+                <div class="tut-num">09</div>
+                <h3>📺 Lower Third Broadcast</h3>
+                <p>Output khusus streaming.</p>
+                <ul>
+                    <li>URL: <code>/lowerthird</code> (1920x1080).</li>
+                    <li>Background <b>Transparan</b> (Alpha Channel).</li>
+                    <li><b>Independent Config:</b> Punya font & posisi sendiri.</li>
+                    <li>Gunakan fitur <b>Nudge</b> untuk geser posisi pixel-by-pixel.</li>
+                </ul>
+            </div>
+
+            <div class="tut-card">
+                <div class="tut-num">10</div>
+                <h3>🎤 Smart Stage Display</h3>
+                <p>Layar contekan buat Singer & WL.</p>
+                <ul>
+                    <li><b>Auto-Fit:</b> Teks lirik otomatis membesar/mengecil agar muat di layar.</li>
+                    <li><b>Next Line:</b> Menampilkan baris lirik selanjutnya.</li>
+                    <li><b>High Contrast:</b> Hitam Putih agar jelas dibaca.</li>
+                </ul>
+            </div>
+
+            <div class="tut-card">
+                <div class="tut-num">11</div>
+                <h3>🔤 Custom Font Loading</h3>
+                <p>Ingin pakai font sendiri?</p>
+                <ul>
+                    <li>Pilih "Custom..." pada dropdown font.</li>
+                    <li>Ketik nama font yang terinstall di Windows (misal: "Arial Black").</li>
+                    <li>Atau ketik nama <b>Google Font</b> (otomatis download).</li>
+                </ul>
+            </div>
+
+            <div class="tut-card">
+                <div class="tut-num">12</div>
+                <h3>🎚️ Resolume Arena (OSC)</h3>
+                <p>Integrasi Lighting & Video Mapping.</p>
+                <ul>
+                    <li>Kirim sinyal ke <b>Port 7000</b>.</li>
+                    <li>Tombol 1-5 di Resolume+ Panel men-trigger Clip Kolom 1-5 di Arena.</li>
+                    <li>Sinkronisasi visual background dengan lirik secara seamless.</li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

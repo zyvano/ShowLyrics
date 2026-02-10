@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Controller - Cinematic Lyrics</title>
+    <style>
+        :root { 
+            --bg: #121212; --panel: #1e1e1e; --border: #333; --text: #e0e0e0; 
+            --accent: #007bff;
+            --color-verse: #0d6efd; --color-chorus: #dc3545; --color-pre: #ffc107; --color-bridge: #198754;
+        }
+        
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); margin: 0; height: 100vh; display: flex; overflow: hidden; }
+        
+        /* BRAND HEADER STYLE */
+        .brand-header {
+            padding: 20px;
+            text-align: center;
+            background: #111;
+            border-bottom: 1px solid #333;
+        }
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            margin-bottom: 5px;
+            opacity: 0.8;
+        }
+        .brand-title {
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #fff;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+        .brand-subtitle {
+            font-size: 0.65em;
+            color: #666;
+            margin: 0;
+            text-transform: uppercase;
+        }    
+
+        /* LAYOUT */
+        .col-playlist { flex: 0 0 280px; background: #181818; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .col-main { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow: hidden; }
+        .col-settings { flex: 0 0 260px; background: #181818; border-left: 1px solid var(--border); padding: 20px; overflow-y: auto; }
+        
+        /* TABS */
+        .tab-header { display: flex; border-bottom: 1px solid var(--border); }
+        .tab-btn { flex: 1; padding: 15px; background: #222; border: none; color: #888; cursor: pointer; font-weight: bold; border-bottom: 3px solid transparent; transition: 0.2s; }
+        .tab-btn:hover { background: #2a2a2a; color: #fff; } .tab-btn.active { background: #181818; color: var(--accent); border-bottom: 3px solid var(--accent); }
+        .list-container { flex: 1; overflow-y: auto; display: none; } .list-container.active { display: flex; flex-direction: column; }
+
+        .resolume-section { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 2px dashed #444; }
+        .res-box { background: #2b1d3d; border: 1px solid #442a66; border-radius: 6px; padding: 5px; display: flex; flex-direction: column; gap: 5px; }
+        .res-select { background: #1a1a1a; color: #ccc; border: none; font-size: 0.75em; padding: 4px; text-align: center; border-radius: 3px; }
+        .res-trigger-btn { flex: 1; background: var(--res-color); border: none; color: white; font-weight: bold; font-size: 1.2em; border-radius: 4px; cursor: pointer; padding: 15px 0; transition: 0.1s; text-transform: uppercase; }
+        .res-trigger-btn:active { transform: scale(0.95); filter: brightness(1.2); } .res-trigger-btn:hover { background: #8255d6; }
+        .res-config-row { display: flex; align-items: center; gap: 5px; margin-bottom: 8px; }
+        .res-label { width: 50px; font-size: 0.8em; color: #d6bcfa; font-weight: bold; }
+        .res-input-group { flex: 1; display: flex; gap: 2px; align-items: center; }
+        .res-input { width: 100%; background: #1a1a1a; border: 1px solid #444; color: #fff; padding: 5px; border-radius: 3px; text-align: center; font-family: monospace;}
+        .res-mini-label { font-size: 0.6em; color: #888; text-transform: uppercase; margin-right: 3px;}
+
+
+        /* SCHEDULE & LIBRARY */
+        .schedule-manager { padding: 10px; background: #252525; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 5px; }
+        .sched-row { display: flex; gap: 5px; } .sched-select { flex: 1; background: #333; color: white; border: 1px solid #444; padding: 5px; border-radius: 4px; }
+        .btn-mini { padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; color: white; font-size: 0.8em; font-weight: bold;}
+        .btn-mini.load { background: var(--accent); } .btn-mini.save { background: #28a745; } .btn-mini.del { background: #dc3545; }
+        .scroll-area { flex: 1; overflow-y: auto; } .search-box { width: 90%; margin: 10px 5%; padding: 8px; background: #333; border: 1px solid #444; color: white; border-radius: 4px; box-sizing: border-box; }
+        .song-item { padding: 10px 15px; border-bottom: 1px solid #2a2a2a; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; font-size: 0.9em; } .song-item:hover { background: #2a2a2a; } .song-item.active { background: #222; border-left: 3px solid var(--accent); color: white; }
+        .item-actions { display: flex; gap: 5px; } .btn-icon { background: none; border: none; color: #666; cursor: pointer; font-size: 1.1em; padding: 2px 5px; border-radius: 3px;} .btn-icon:hover { background: #333; color: #fff; } .btn-add { color: #28a745; } .btn-del { color: #dc3545; }
+        .import-section { padding: 10px; border-top: 1px solid var(--border); text-align: center; } .btn-import { width: 100%; padding: 8px; background: #333; color: #aaa; border: 1px dashed #555; cursor: pointer; border-radius: 4px; font-size: 0.8em; }
+
+        /* EDITOR & GRID */
+        #input-area-wrapper { margin-bottom: 15px; display: flex; gap: 10px; flex-direction: column;}
+        textarea { min-height: 100px; max-height: 150px; background: var(--panel); border: 1px solid var(--border); color: #fff; padding: 15px; resize: vertical; font-size: 0.9em; font-family: monospace; }
+        .action-row { display: flex; gap: 10px; }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; overflow-y: auto; flex: 1; align-content: start; padding-bottom: 50px; }
+        .lyric-box { background: var(--panel); border: 1px solid var(--border); padding: 5px 10px; height: 60px; cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 0.8em; position: relative; border-radius: 4px; user-select: none; transition: 0.1s; }
+        .lyric-box:hover { background: #2a2a2a; border-color: #666; } .lyric-box.live-active { border: 2px solid #fff; background: #222; box-shadow: 0 0 15px rgba(255,255,255,0.1); } .lyric-box.selected { background: #333; }
+        .tag-badge { position: absolute; top: 0; left: 0; right: 0; font-size: 0.65em; font-weight: bold; text-transform: uppercase; padding: 2px; color: #fff; background: #444; border-radius: 3px 3px 0 0; }
+        .lyric-box.tag-verse { border-top: 3px solid var(--color-verse); } .lyric-box.tag-verse .tag-badge { background: var(--color-verse); } .lyric-box.tag-chorus { border-top: 3px solid var(--color-chorus); } .lyric-box.tag-chorus .tag-badge { background: var(--color-chorus); }
+        
+        /* SETTINGS */
+        .control-group { margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 15px; }
+        label { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.75em; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        input[type="text"], input[type="color"], select { width: 100%; padding: 8px; background: var(--panel); border: 1px solid var(--border); color: white; border-radius: 4px; box-sizing: border-box;}
+        input[type="range"] { width: 100%; accent-color: var(--accent); cursor: pointer; }
+        .btn-action { width: 100%; padding: 12px; cursor: pointer; border: none; font-weight: bold; border-radius: 4px; color:white; font-size: 0.9em; transition: 0.2s;}
+        .btn-blue { background: var(--accent); } .btn-green { background: #198754; } .btn-red { background: #dc3545; }
+        .legend { font-size: 0.75em; color: #666; margin-top: 10px; line-height: 1.6; }
+        .key { background: #333; padding: 2px 5px; border-radius: 3px; color: #fff; border: 1px solid #555;}
+        /* LIVE PREVIEW STYLES */
+        .preview-container {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .preview-header {
+            display: flex; justify-content: space-between; align-items: center;
+            color: #888; font-size: 10px; font-weight: bold; letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .live-dot {
+            width: 8px; height: 8px; background: #ff0000; border-radius: 50%;
+            box-shadow: 0 0 5px #ff0000;
+            animation: blinkLive 1s infinite;
+        }
+        @keyframes blinkLive { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* KUNCI RESPONSIVE 16:9 */
+        .iframe-wrapper {
+            width: 100%;
+            /* Trik biar aspect ratio tetep 16:9 (HD) walau lebar berubah */
+            padding-top: 56.25%; 
+            position: relative;
+            background: #000;
+            overflow: hidden;
+            border: 1px solid #444;
+        }
+
+        #preview-frame {
+            position: absolute;
+            top: 0; left: 0;
+            width: 1920px; height: 1080px; /* Resolusi Asli Display */
+            border: 0;
+            transform-origin: top left; /* Kecilin dari pojok kiri atas */
+            pointer-events: none; /* Biar gak bisa diklik-klik */
+            background-color: #000;
+        }
+        /* STYLE TOMBOL IMPORT KEREN */
+        .panel-header { padding: 10px; background: #252525; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; font-size: 0.85em; font-weight: bold; color: #aaa; }
+        .btn-import { background-color: #2c3e50; color: white; border: 1px solid #34495e; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.9em; font-weight: bold; display: inline-flex; align-items: center; gap: 5px; text-decoration: none;}
+        .btn-import:hover { background-color: #34495e; }
+
+        /* MODAL POPUP STYLE */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); z-index: 1000;
+            justify-content: center; align-items: center;
+        }
+        .modal-box {
+            background: #1e1e1e; border: 1px solid #444; width: 400px; padding: 20px;
+            border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            color: #fff; font-family: 'Segoe UI', sans-serif;
+        }
+        .modal-header { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .modal-title { font-weight: bold; color: #007bff; }
+        .close-btn { background: none; border: none; color: #aaa; cursor: pointer; font-size: 1.2em; }
+        .close-btn:hover { color: #fff; }
+        
+        .lt-control-row { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+        .lt-btn-adjust { background: #333; border: 1px solid #555; color: white; width: 30px; height: 30px; border-radius: 4px; cursor: pointer; }
+        .lt-btn-adjust:hover { background: #555; }
+        .lt-input-num { width: 60px !important; text-align: center; }
+        .preset-btn { flex: 1; padding: 5px; background: #222; border: 1px solid #444; color: #ccc; cursor: pointer; border-radius: 3px; font-size: 0.8em; }
+        .preset-btn:hover { background: #007bff; color: white; border-color: #007bff; }
+        
+    </style>
+</head>
+<body>
+    
+    <div class="col-playlist">
+        <div class="brand-header">
+            <img src="/static/logo.png" class="brand-logo">
+            <h3 class="brand-title">Lyrics Engine</h3>
+            <p class="brand-subtitle">Multimedia App</p>
+        </div>
+        <div class="tab-header">
+            <button class="tab-btn active" onclick="switchTab('library')">LIBRARY</button>
+            <button class="tab-btn" onclick="switchTab('schedule')">SCHEDULE</button>
+        </div>
+        <div id="tab-library" class="list-container active">
+            <input type="text" class="search-box" id="search-library" placeholder="Search Library..." onkeyup="filterLibrary()">
+            <div id="library-list" class="scroll-area"></div>
+            <div class="panel-header">
+                <label for="import-file" class="btn-import">📂 Import TXT</label>
+                <input type="file" id="import-file" multiple accept=".txt" style="display: none;" onchange="uploadFiles(this)">
+            </div>
+        </div>
+        <div id="tab-schedule" class="list-container">
+            <div class="schedule-manager">
+                <div style="font-size:0.8em; color:#888;">RUNNING ORDER</div>
+                <div class="sched-row"><button class="btn-mini save" style="width:100%" onclick="saveScheduleAs()">💾 SAVE AS...</button></div>
+                <div style="border-top:1px solid #444; margin:5px 0;"></div>
+                <div style="font-size:0.8em; color:#888;">SAVED SCHEDULES</div>
+                <div class="sched-row"><select id="saved-sched-select" class="sched-select"><option value="">-- Select Saved --</option></select></div>
+                <div class="sched-row"><button class="btn-mini load" style="flex:1" onclick="loadSavedSchedule()">📂 LOAD</button><button class="btn-mini del" style="width:30px" onclick="deleteSavedSchedule()">🗑</button></div>
+            </div>
+            <div id="schedule-list" class="scroll-area"></div>
+        </div>
+    </div>
+
+    <div class="col-main">
+        <div id="input-area-wrapper">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center;">
+                <label style="margin:0; font-size: 0.8em; color:#666;">LYRIC EDITOR</label>
+                <button onclick="formatText()" 
+                        style="background: #ffc107; border: none; color: #000; padding: 2px 8px; border-radius: 3px; cursor: pointer; font-weight: bold; font-size: 0.75em;">
+                    ⚡ UPPERCASE & CLEAN
+                </button>
+            </div>
+
+            <textarea id="raw-input" placeholder="Paste lirik disini..."></textarea>
+            
+            <div class="action-row">
+                <button class="btn-action btn-blue" onclick="parseLyrics()" style="flex: 1;">LOAD TO GRID</button>
+                <button class="btn-action btn-green" onclick="saveSong()" style="flex: 1;">SAVE TO LIBRARY</button>
+            </div>
+        </div>
+
+        <div class="resolume-section">
+            <div class="res-box">
+                <select class="res-select" id="res-label-1" onchange="saveResConfig()"><option>Intro</option><option>Slow</option><option>Verse</option><option>Chorus</option><option>Bridge</option><option>Interlude</option><option>Upbeat</option></select>
+                <button class="res-trigger-btn" onclick="triggerResolume(1)">GO</button>
+            </div>
+            <div class="res-box">
+                <select class="res-select" id="res-label-2" onchange="saveResConfig()"><option>Intro</option><option selected>Slow</option><option>Verse</option><option>Chorus</option><option>Bridge</option><option>Interlude</option><option>Upbeat</option></select>
+                <button class="res-trigger-btn" onclick="triggerResolume(2)">GO</button>
+            </div>
+            <div class="res-box">
+                <select class="res-select" id="res-label-3" onchange="saveResConfig()"><option>Intro</option><option>Slow</option><option selected>Verse</option><option>Chorus</option><option>Bridge</option><option>Interlude</option><option>Upbeat</option></select>
+                <button class="res-trigger-btn" onclick="triggerResolume(3)">GO</button>
+            </div>
+            <div class="res-box">
+                <select class="res-select" id="res-label-4" onchange="saveResConfig()"><option>Intro</option><option>Slow</option><option>Verse</option><option selected>Chorus</option><option>Bridge</option><option>Interlude</option><option>Upbeat</option></select>
+                <button class="res-trigger-btn" onclick="triggerResolume(4)">GO</button>
+            </div>
+            <div class="res-box">
+                <select class="res-select" id="res-label-5" onchange="saveResConfig()"><option>Intro</option><option>Slow</option><option>Verse</option><option>Chorus</option><option>Bridge</option><option selected>Interlude</option><option>Upbeat</option></select>
+                <button class="res-trigger-btn" onclick="triggerResolume(5)">GO</button>
+            </div>
+        </div>
+
+        <div id="grid-container" class="grid-container"></div>
+    </div>
+
+    <div class="col-settings">
+        <button onclick="openLTConfig()" class="btn-action" style="background: #6c757d; margin-bottom: 15px;">⚙️ CONFIGURE LOWER THIRD</button>
+
+        <div id="lt-modal" class="modal-overlay">
+            <div class="modal-box" style="width: 450px;">
+                <div class="modal-header">
+                    <span class="modal-title">LOWER THIRD CONFIG</span>
+                    <button class="close-btn" onclick="closeLTConfig()">✖</button>
+                </div>
+
+                <div style="background: #252525; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #444;">
+                    <label style="color: #28a745;">💾 SAVED PRESETS</label>
+                    <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                        <select id="lt-preset-select" style="flex:1;" onchange="loadSelectedLTPreset()"></select>
+                        <button class="btn-mini load" onclick="loadSelectedLTPreset()">LOAD</button>
+                        <button class="btn-mini del" onclick="deleteLTPreset()">🗑</button>
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="preset-btn" onclick="saveCurrentLTPreset()" style="background: #007bff; color: white;">+ SAVE NEW</button>
+                        <button class="preset-btn" onclick="setLTDefault()" style="background: #6c757d; color: white;">★ SET AS DEFAULT</button>
+                    </div>
+                    <small id="lt-default-status" style="color: #888; font-size: 0.7em; display: block; margin-top: 5px;">Default: None</small>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label>Font Family</label>
+                        <select id="lt-font" onchange="sendLTConfig()">
+                            <option value="Montserrat">Montserrat (Bold)</option>
+                            <option value="Cinzel">Cinzel (Serif)</option>
+                            <option value="Lato">Lato (Clean)</option>
+                            <option value="Bebas Neue">Bebas Neue (Tall)</option>
+                            <option value="Orbitron">Orbitron (Sci-Fi)</option>
+                            <option value="Dancing Script">Dancing Script</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label>Font Size</label>
+                        <input type="number" id="lt-size" value="60" onchange="sendLTConfig()">
+                    </div>
+                </div>
+
+                <div class="lt-control-row" style="margin-top: 10px;">
+                    <button class="preset-btn" onclick="setLTPreset('bottom')">BOTTOM</button>
+                    <button class="preset-btn" onclick="setLTPreset('center')">CENTER</button>
+                    <button class="preset-btn" onclick="setLTPreset('top')">TOP</button>
+                </div>
+
+                <label>Vertical Position (Y)</label>
+                <div class="lt-control-row">
+                    <button class="lt-btn-adjust" onclick="nudgeLT(10)">▲</button>
+                    <input type="number" id="lt-margin" class="lt-input-num" value="50" onchange="sendLTConfig()">
+                    <button class="lt-btn-adjust" onclick="nudgeLT(-10)">▼</button>
+                    <div style="flex:1; text-align: right;">
+                        <input type="color" id="lt-color" value="#ffffff" style="height: 30px; width: 40px;" onchange="sendLTConfig()">
+                    </div>
+                </div>
+
+                <label>Hard Shadow (X | Y | Color)</label>
+                <div class="lt-control-row">
+                    <input type="number" id="lt-shadow-x" value="3" style="width: 50px;" onchange="sendLTConfig()">
+                    <input type="number" id="lt-shadow-y" value="3" style="width: 50px;" onchange="sendLTConfig()">
+                    <input type="color" id="lt-shadow-color" value="#000000" style="flex:1; height: 30px;" onchange="sendLTConfig()">
+                </div>
+
+                <input type="hidden" id="lt-pos-mode" value="bottom">
+            </div>
+        </div>
+
+        <button onclick="openFBConfig()" class="btn-action" style="background: #343a40;">⚙️ CONFIG STAGE DISPLAY</button>
+
+        <div id="fb-modal" class="modal-overlay">
+            <div class="modal-box" style="width: 400px;">
+                <div class="modal-header">
+                    <span class="modal-title">STAGE DISPLAY CONFIG</span>
+                    <button class="close-btn" onclick="closeFBConfig()">✖</button>
+                </div>
+
+                <div style="background: #252525; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #444;">
+                    <label style="color: #ffc107;">🎤 FB PRESETS</label>
+                    <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                        <select id="fb-preset-select" style="flex:1;" onchange="loadSelectedFBPreset()"></select>
+                        <button class="btn-mini load" onclick="loadSelectedFBPreset()">LOAD</button>
+                        <button class="btn-mini del" onclick="deleteFBPreset()">🗑</button>
+                    </div>
+                    <div style="display: flex; gap: 5px;">
+                        <button class="preset-btn" onclick="saveFBPreset()" style="background: #007bff; color: white;">+ SAVE</button>
+                        <button class="preset-btn" onclick="setDefaultFBPreset()" style="background: #6c757d; color: white;">★ DEFAULT</button>
+                    </div>
+                    <small id="fb-default-status" style="color: #888; font-size: 0.7em; display: block; margin-top: 5px;">Default: None</small>
+                </div>
+
+                <label>Layout Mode</label>
+                <div class="lt-control-row">
+                    <button class="preset-btn" onclick="setFBLayout('split')">SPLIT (Standard)</button>
+                    <button class="preset-btn" onclick="setFBLayout('full')">FULL (Max Text)</button>
+                </div>
+                <input type="hidden" id="fb-layout" value="split">
+
+                <<hr style="border-color: #333; margin: 15px 0;">
+
+                <div class="lt-control-row">
+                    <div style="flex:1">
+                        <label>Max Text Size (Auto-Fit)</label>
+                        <input type="number" id="fb-curr-size" value="250" onchange="sendFBConfig()">
+                    </div>
+                    <div style="flex:1">
+                        <label>Color</label>
+                        <input type="color" id="fb-curr-color" value="#ffffff" style="height:30px; width:100%" onchange="sendFBConfig()">
+                    </div>
+                </div>
+
+                <div class="lt-control-row">
+                    <div style="flex:1">
+                        <label>Max Next Size (px)</label>
+                        <input type="number" id="fb-next-size" value="100" onchange="sendFBConfig()">
+                    </div>
+                    <div style="flex:1">
+                        <label>Color</label>
+                        <input type="color" id="fb-next-color" value="#888888" style="height:30px; width:100%" onchange="sendFBConfig()">
+                    </div>
+                </div>
+
+                <label>Background Color</label>
+                <input type="color" id="fb-bg-color" value="#000000" style="width:100%; height:30px;" onchange="sendFBConfig()">
+            </div>
+        </div><br> <br>
+
+        <div class="preview-container">
+            <div class="preview-header">
+                <span>LIVE OUTPUT</span>
+                <div class="live-dot"></div>
+            </div>
+            <div class="iframe-wrapper" id="preview-wrapper">
+                <iframe src="/display" id="preview-frame" scrolling="no"></iframe>
+            </div>
+        </div>
+
+        <hr style="border-color: #333; margin-bottom: 20px;">
+        <div class="control-group" style="border: 1px solid #6f42c1; padding: 10px; border-radius: 4px; background: #2b1d3d;">
+            <label style="color: #d6bcfa;">RESOLUME CONFIG</label>
+            <small style="color: #aaa; display:block; margin-bottom:10px;">Set Layer & Clip</small>
+            
+            <div class="res-config-row"><span class="res-label">BOX 1</span><div class="res-input-group"><span class="res-mini-label">LYR</span><input type="number" id="res-layer-1" class="res-input" value="1" onchange="saveResConfig()"><span class="res-mini-label">CLP</span><input type="number" id="res-clip-1" class="res-input" value="1" onchange="saveResConfig()"></div></div>
+            <div class="res-config-row"><span class="res-label">BOX 2</span><div class="res-input-group"><span class="res-mini-label">LYR</span><input type="number" id="res-layer-2" class="res-input" value="1" onchange="saveResConfig()"><span class="res-mini-label">CLP</span><input type="number" id="res-clip-2" class="res-input" value="2" onchange="saveResConfig()"></div></div>
+            <div class="res-config-row"><span class="res-label">BOX 3</span><div class="res-input-group"><span class="res-mini-label">LYR</span><input type="number" id="res-layer-3" class="res-input" value="1" onchange="saveResConfig()"><span class="res-mini-label">CLP</span><input type="number" id="res-clip-3" class="res-input" value="3" onchange="saveResConfig()"></div></div>
+            <div class="res-config-row"><span class="res-label">BOX 4</span><div class="res-input-group"><span class="res-mini-label">LYR</span><input type="number" id="res-layer-4" class="res-input" value="1" onchange="saveResConfig()"><span class="res-mini-label">CLP</span><input type="number" id="res-clip-4" class="res-input" value="4" onchange="saveResConfig()"></div></div>
+            <div class="res-config-row"><span class="res-label">BOX 5</span><div class="res-input-group"><span class="res-mini-label">LYR</span><input type="number" id="res-layer-5" class="res-input" value="1" onchange="saveResConfig()"><span class="res-mini-label">CLP</span><input type="number" id="res-clip-5" class="res-input" value="5" onchange="saveResConfig()"></div></div>
+        </div>
+
+        <div class="control-group"><button id="btn-clear" class="btn-action btn-red" onclick="toggleClear()">CLEAR SCREEN (Ctrl+C)</button></div>
+
+        <div class="control-group" style="background: #252525; padding: 10px; border-radius: 5px; border: 1px solid #444;">
+            <label style="color: #007bff;">🖥️ DISPLAY PRESETS</label>
+            <div style="display: flex; gap: 5px; margin-bottom: 5px;">
+                <select id="disp-preset-select" style="flex:1;" onchange="loadSelectedDisplayPreset()"></select>
+                <button class="btn-mini load" onclick="loadSelectedDisplayPreset()">LOAD</button>
+                <button class="btn-mini del" onclick="deleteDisplayPreset()">🗑</button>
+            </div>
+            <div style="display: flex; gap: 5px;">
+                <button class="preset-btn" onclick="saveDisplayPreset()" style="background: #007bff; color: white;">+ SAVE</button>
+                <button class="preset-btn" onclick="setDefaultDisplayPreset()" style="background: #6c757d; color: white;">★ DEFAULT</button>
+            </div>
+            <small id="disp-default-status" style="color: #888; font-size: 0.7em; display: block; margin-top: 5px;">Default: None</small>
+        </div>
+        <div class="control-group">
+            <label>Font Family</label>
+            <select id="font-select" onchange="checkFontMode()">
+                <option value="custom">-- Custom (Manual) --</option>
+                <option value="Cinzel" selected>Cinzel (Serif)</option>
+                <option value="Montserrat">Montserrat (Bold)</option>
+                <option value="Lato">Lato (Thin)</option>
+                <option value="Playfair Display">Playfair (Classic)</option>
+                <option value="Bebas Neue">Bebas Neue (Tall)</option>
+                <option value="Orbitron">Orbitron (Sci-Fi)</option>
+                <option value="Dancing Script">Dancing Script (Hand)</option>
+            </select>
+            <input type="text" id="font-manual" placeholder="Font Name" style="display: none; margin-top: 5px; border: 1px solid #007bff;" onchange="updateSettings()"> 
+        </div>
+
+        <div class="control-group">
+            <label style="color: #007bff; font-weight:bold;">Text Style Preset</label>
+            <select id="theme-input" onchange="updateSettings()" style="background: #111; border: 1px solid #007bff; font-weight: bold;">
+                <optgroup label="Worship & Atmosphere">
+                    <option value="default" selected>✨ Default Glow</option>
+                    <option value="heaven">☁️ Heavenly (Blue Glow)</option>
+                    <option value="mist">🌫️ Soft Mist (Deep)</option>
+                    <option value="gold">👑 Royal Gold (Classic)</option>
+                </optgroup>
+                <optgroup label="Praise & Energy">
+                    <option value="3d">🔥 Bold 3D (Impact)</option>
+                    <option value="fire">🌋 Fire Ember</option>
+                    <option value="retro">🎸 Retro Synth (80s)</option>
+                    <option value="double">⚽ Double Outline</option>
+                </optgroup>
+                <optgroup label="Youth & Modern">
+                    <option value="neon">⚡ Neon Outline</option>
+                    <option value="cyber">🤖 Cyber Glitch</option>
+                    <option value="aurora">🌈 Aurora (Animated)</option>
+                </optgroup>
+                <optgroup label="Cinematic & Clean">
+                    <option value="metal">⚔️ Silver Metal</option>
+                    <option value="glass">💎 Glassy (Elegant)</option>
+                    <option value="long">🏙️ Long Shadow</option>
+                    <option value="clean">💧 Clean Modern</option>
+                </optgroup>
+            </select>
+        </div>
+        <div class="control-group"><label>AURA / GLOW COLOR</label><input type="color" id="color-input" value="#ffffff" onchange="updateSettings()"></div>
+        <div class="control-group"><label>Glow Intensity <span id="val-glow">50%</span></label><input type="range" id="glow-input" min="0" max="100" value="50" oninput="updateSettings()"></div>
+        <div class="control-group"><label>Fade Transition <span id="val-fade">0.5s</span></label><input type="range" id="fade-input" min="0.1" max="2.0" step="0.1" value="0.5" oninput="updateSettings()"></div>
+        <div class="control-group">
+            <label>Entry Animation FX</label>
+            <select id="trans-input" onchange="updateSettings()">
+                <optgroup label="Essential">
+                    <option value="fade">Fade (Standard)</option>
+                    <option value="blur" selected>Cinematic Blur (Smooth)</option>
+                    <option value="mask">Mask Rise (Clean)</option>
+                </optgroup>
+                <optgroup label="Atmosphere / Worship">
+                    <option value="wave">Liquid Wave (Peaceful)</option>
+                    <option value="gauss">Gaussian Merge (Ethereal)</option>
+                    <option value="echo">Echo Merge (Deep)</option>
+                </optgroup>
+                <optgroup label="Praise / Energetic">
+                    <option value="pop">Elastic Pop (Bouncy)</option>
+                    <option value="neon">Neon Flicker (Beat)</option>
+                    <option value="glitch">Soft Glitch (Youth)</option>
+                    <option value="burst">Glow Burst (Impact)</option>
+                </optgroup>
+                <optgroup label="Cinematic / Title">
+                    <option value="stretch">Cinema Stretch (Movie)</option>
+                    <option value="flip3d">3D Flip Down</option>
+                    <option value="track">Tracking In</option>
+                    <option value="stagger">Letter Stagger</option>
+                    <option value="spin">Letter Spin</option>
+                </optgroup>
+            </select>
+        </div>
+        <div class="control-group"><label>Animation Speed</label><select id="speed-input" onchange="updateSettings()"><option value="15s">Fast</option><option value="30s" selected>Normal</option><option value="60s">Slow</option></select></div>
+        <div class="control-group">
+            <label>Background Motion</label>
+            <select id="zoom-input" onchange="updateSettings()">
+                <option value="stay" selected>Stay (Slow Drift)</option>
+                <option value="in">Zoom IN</option>
+                <option value="out">Zoom OUT</option>
+            </select>
+        </div>
+        <div class="legend"><strong>SHORTCUTS:</strong><br><span class="key">Right Click</span> = Quick Edit<br><span class="key">Shift + V/C/B</span> = Assign<br><span class="key">V/C</span> = Jump Live<br><span class="key">Arrows</span> = Next/Prev</div>
+    </div>
+
+    <script>
+        const ws = new WebSocket("ws://" + window.location.host + "/ws");
+        
+        let lyricsData = []; let currentIndex = -1; let isShowing = false; let currentSongTitle = ""; 
+        let allSongs = []; let scheduleList = []; let savedSchedules = {};
+
+        window.onload = function() { fetchLibrary(); fetchActiveSchedule(); fetchSavedSchedules(); fetchLTPresets();fetchDisplayPresets();fetchFBPresets();};
+
+        function triggerResolume(boxId) {
+            const layer = document.getElementById(`res-layer-${boxId}`).value;
+            const clip = document.getElementById(`res-clip-${boxId}`).value;
+            const address = `/composition/layers/${layer}/clips/${clip}/connect`;
+            if(layer && clip) {
+                ws.send(JSON.stringify({ action: "send_osc", address: address }));
+                const btn = document.querySelectorAll('.res-trigger-btn')[boxId-1];
+                btn.style.backgroundColor = "#fff";
+                setTimeout(() => { btn.style.backgroundColor = ""; }, 100);
+            }
+        }
+        function saveResConfig() {
+            const config = {};
+            for(let i=1; i<=5; i++) {
+                config[`label-${i}`] = document.getElementById(`res-label-${i}`).value;
+                config[`layer-${i}`] = document.getElementById(`res-layer-${i}`).value;
+                config[`clip-${i}`] = document.getElementById(`res-clip-${i}`).value;
+            }
+            localStorage.setItem("resolumeConfigSimple", JSON.stringify(config));
+        }
+        function loadResConfig() {
+            const saved = localStorage.getItem("resolumeConfigSimple");
+            if(saved) {
+                const config = JSON.parse(saved);
+                for(let i=1; i<=5; i++) {
+                    if(config[`label-${i}`]) document.getElementById(`res-label-${i}`).value = config[`label-${i}`];
+                    if(config[`layer-${i}`]) document.getElementById(`res-layer-${i}`).value = config[`layer-${i}`];
+                    if(config[`clip-${i}`]) document.getElementById(`res-clip-${i}`).value = config[`clip-${i}`];
+                }
+            }
+        }
+
+        function switchTab(tabName) { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.list-container').forEach(c => c.classList.remove('active')); if (tabName === 'library') { document.querySelector('button[onclick="switchTab(\'library\')"]').classList.add('active'); document.getElementById('tab-library').classList.add('active'); } else { document.querySelector('button[onclick="switchTab(\'schedule\')"]').classList.add('active'); document.getElementById('tab-schedule').classList.add('active'); } }
+        function checkFontMode() { const select = document.getElementById("font-select"); const manual = document.getElementById("font-manual"); if (select.value === "custom") { manual.style.display = "block"; manual.focus(); } else { manual.style.display = "none"; updateSettings(); } }
+        function getCurrentFont() { const select = document.getElementById("font-select"); if (select.value === "custom") return document.getElementById("font-manual").value || "Cinzel"; return select.value; }
+        
+        async function fetchLibrary() { const res = await fetch('/api/songs'); allSongs = await res.json(); renderLibrary(allSongs); }
+        function renderLibrary(songs) { const container = document.getElementById("library-list"); container.innerHTML = ""; songs.forEach(song => { const div = document.createElement("div"); div.className = "song-item"; if(song.title === currentSongTitle) div.classList.add("active"); div.innerHTML = `<span style="flex:1" onclick="loadSong('${song.title}')">${song.title}</span><div class="item-actions"><button class="btn-icon btn-add" title="Add to Schedule" onclick="addToSchedule('${song.title}')">✚</button><button class="btn-icon btn-del" title="Delete from Library" onclick="deleteSong('${song.title}')">🗑</button></div>`; container.appendChild(div); }); }
+        
+        function cleanText(text) {
+            if (!text) return "";
+            return text.toString()
+                .toLowerCase()                 // Huruf kecil semua
+                .replace(/[^a-z0-9\s]/g, '')   // Hapus APAPUN yang bukan huruf/angka/spasi (tanda baca hilang)
+                .replace(/\s+/g, ' ')          // Ubah spasi dobel jadi satu
+                .trim();
+        }
+
+        function filterLibrary() {
+            const rawQuery = document.getElementById("search-library").value;
+            const query = cleanText(rawQuery); // Bersihin input user
+
+            // Filter Logic
+            const filtered = allSongs.filter(s => {
+                // 1. Cek Judul (Priority)
+                const titleClean = cleanText(s.title);
+                if (titleClean.includes(query)) return true;
+
+                // 2. Cek Isi Lirik (Deep Search)
+                if (s.data && Array.isArray(s.data)) {
+                    // Gabungin semua slide lirik jadi satu kalimat panjang
+                    const allLyrics = s.data.map(slide => slide.text).join(" ");
+                    const lyricsClean = cleanText(allLyrics);
+                    
+                    // Cek apakah query ada di dalam lirik
+                    if (lyricsClean.includes(query)) return true;
+                }
+
+                return false;
+            });
+
+            renderLibrary(filtered);
+        }
+        async function fetchActiveSchedule() { const res = await fetch('/api/service'); scheduleList = await res.json(); renderSchedule(); }
+        function renderSchedule() { const container = document.getElementById("schedule-list"); container.innerHTML = ""; if(scheduleList.length === 0) { container.innerHTML = "<div style='padding:20px; text-align:center; color:#555;'>Empty Running Order</div>"; return; } scheduleList.forEach((title, index) => { const div = document.createElement("div"); div.className = "song-item"; if(title === currentSongTitle) div.classList.add("active"); div.innerHTML = `<span style="flex:1" onclick="loadSong('${title}')">${index + 1}. ${title}</span><div class="item-actions"><button class="btn-icon btn-del" title="Remove" onclick="removeFromSchedule(${index})">✖</button></div>`; container.appendChild(div); }); }
+        async function addToSchedule(title) { scheduleList.push(title); renderSchedule(); await saveActiveSchedule(); }
+        async function removeFromSchedule(index) { scheduleList.splice(index, 1); renderSchedule(); await saveActiveSchedule(); }
+        async function saveActiveSchedule() { await fetch('/api/service', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(scheduleList) }); }
+        async function fetchSavedSchedules() { const res = await fetch('/api/schedules'); savedSchedules = await res.json(); const select = document.getElementById("saved-sched-select"); select.innerHTML = '<option value="">-- Select Saved --</option>'; for (const name in savedSchedules) { const opt = document.createElement("option"); opt.value = name; opt.innerText = name; select.appendChild(opt); } }
+        async function saveScheduleAs() { if(scheduleList.length === 0) { alert("Running Order kosong!"); return; } const name = prompt("Beri nama Schedule ini:"); if(!name) return; const payload = { name: name, items: scheduleList }; await fetch('/api/schedules', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); alert("Tersimpan!"); fetchSavedSchedules(); }
+        async function loadSavedSchedule() { const name = document.getElementById("saved-sched-select").value; if(!name) return; if(!confirm(`Timpa running order dengan "${name}"?`)) return; scheduleList = savedSchedules[name]; renderSchedule(); await saveActiveSchedule(); }
+        async function deleteSavedSchedule() { const name = document.getElementById("saved-sched-select").value; if(!name) return; if(!confirm(`Hapus "${name}" permanen?`)) return; await fetch(`/api/schedules/${name}`, { method: 'DELETE' }); fetchSavedSchedules(); }
+        
+        async function saveSong() { if(lyricsData.length === 0) { alert("Grid kosong!"); return; } let title = prompt("Masukkan Judul Lagu:", currentSongTitle); if (!title) return; const currentSettings = { font: getCurrentFont(), color: document.getElementById("color-input").value, glow: document.getElementById("glow-input").value, fade: document.getElementById("fade-input").value, speed: document.getElementById("speed-input").value, zoom: document.getElementById("zoom-input").value }; const payload = { title: title, data: lyricsData, settings: currentSettings }; const res = await fetch('/api/songs', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }); if(res.ok) { currentSongTitle = title; fetchLibrary(); alert("Tersimpan di Library!"); } }
+        async function deleteSong(title) { if(!confirm(`Hapus "${title}"?`)) return; await fetch(`/api/songs/${title}`, { method: 'DELETE' }); if(scheduleList.includes(title)) { scheduleList = scheduleList.filter(t => t !== title); saveActiveSchedule(); renderSchedule(); } if(currentSongTitle === title) currentSongTitle = ""; fetchLibrary(); }
+        function loadSong(title) { const song = allSongs.find(s => s.title === title); if(song) { currentSongTitle = song.title; lyricsData = song.data; if (song.settings && Object.keys(song.settings).length > 0) { const savedFont = song.settings.font || "Cinzel"; const select = document.getElementById("font-select"); const manual = document.getElementById("font-manual"); const options = Array.from(select.options).map(o => o.value); if (options.includes(savedFont) && savedFont !== 'custom') { select.value = savedFont; manual.style.display = "none"; } else { select.value = "custom"; manual.style.display = "block"; manual.value = savedFont; } document.getElementById("color-input").value = song.settings.color || "#ffffff"; document.getElementById("glow-input").value = song.settings.glow || 50; document.getElementById("fade-input").value = song.settings.fade || 0.5; document.getElementById("speed-input").value = song.settings.speed || "30s"; document.getElementById("zoom-input").value = song.settings.zoom || "in"; updateSettings(); } renderGrid(); document.getElementById("raw-input").value = lyricsData.map(d => d.text).join("\n"); renderLibrary(allSongs); renderSchedule(); } }
+        function parseLyrics() { const raw = document.getElementById("raw-input").value; const lines = raw.split('\n'); lyricsData = []; currentSongTitle = ""; let idCounter = 0; lines.forEach(line => { if(line.trim()) { lyricsData.push({ id: idCounter++, text: line.trim(), type: 'normal' }); } }); renderGrid(); }
+        
+        function renderGrid() { 
+            const container = document.getElementById("grid-container"); container.innerHTML = ""; 
+            lyricsData.forEach((item, idx) => { 
+                const box = document.createElement("div"); 
+                let typeClass = "", typeLabel = (idx + 1).toString(); 
+                if(item.type === 'verse') { typeClass = "tag-verse"; typeLabel = "VERSE"; } 
+                else if(item.type === 'chorus') { typeClass = "tag-chorus"; typeLabel = "CHORUS"; } 
+                else if(item.type === 'pre') { typeClass = "tag-pre"; typeLabel = "PRE-CH"; } 
+                else if(item.type === 'bridge') { typeClass = "tag-bridge"; typeLabel = "BRIDGE"; } 
+                box.className = `lyric-box ${typeClass}`; 
+                box.id = `box-${idx}`; 
+                let preview = item.text.length > 35 ? item.text.substring(0, 35) + "..." : item.text; 
+                box.innerHTML = `<div class="tag-badge">${typeLabel}</div>${preview}`; 
+                box.onclick = () => fireLyric(idx); 
+                // QUICK EDIT
+                box.oncontextmenu = (e) => { e.preventDefault(); quickEdit(idx); };
+                container.appendChild(box); 
+            }); 
+            if(currentIndex >= 0 && isShowing) highlightBox(currentIndex); 
+        }
+
+        async function loadLibrary() {
+            const response = await fetch("/songs");
+            const songs = await response.json();
+            const list = document.getElementById("song-list");
+            list.innerHTML = "";
+            
+            songs.forEach(song => {
+                const li = document.createElement("li");
+                li.className = "song-item";
+                li.onclick = () => loadSong(song);
+                
+                // Tombol Delete Kecil di kanan
+                li.innerHTML = `
+                    <span>${song.replace('.json', '')}</span>
+                    <span class="delete-btn" onclick="deleteSong(event, '${song}')">🗑️</span>
+                `;
+                list.appendChild(li);
+            });
+        }
+        function quickEdit(idx) {
+            const oldText = lyricsData[idx].text;
+            const newText = prompt("Edit Lirik (Kosongkan teks untuk MENGHAPUS slide):", oldText);
+            
+            // Cek user klik Cancel atau OK
+            if (newText !== null) {
+                // 1. LOGIC HAPUS (Jika teks kosong)
+                if (newText.trim() === "") {
+                    if(confirm("Yakin hapus slide lirik ini?")) {
+                        // Hapus dari array data
+                        lyricsData.splice(idx, 1);
+                        
+                        // Kalau slide yang dihapus lagi tayang, matikan layar (Clear)
+                        if (idx === currentIndex && isShowing) {
+                            toggleClear();
+                        }
+                        
+                        // Reset current index biar aman
+                        if (idx === currentIndex) currentIndex = -1;
+                        // Kalau index yang dihapus di atas current, geser current mundur 1
+                        else if (idx < currentIndex) currentIndex--;
+
+                        renderGrid();
+                        // Update text area sumber biar sinkron
+                        document.getElementById("raw-input").value = lyricsData.map(d => d.text).join("\n");
+                    }
+                } 
+                // 2. LOGIC UPDATE (Jika teks diubah tapi tidak kosong)
+                else if (newText !== oldText) {
+                    lyricsData[idx].text = newText;
+                    renderGrid();
+                    // Update layar live kalau slide ini lagi tayang
+                    if (idx === currentIndex && isShowing) sendUpdate(newText);
+                    document.getElementById("raw-input").value = lyricsData.map(d => d.text).join("\n");
+                }
+            }
+        }
+
+        function fireLyric(idx) { currentIndex = idx; isShowing = true; highlightBox(idx); sendUpdate(lyricsData[idx].text); }
+        function highlightBox(idx) { document.querySelectorAll(".lyric-box").forEach(b => { b.classList.remove("live-active"); b.classList.remove("selected"); }); const el = document.getElementById(`box-${idx}`); if(el) { el.classList.add("live-active"); el.classList.add("selected"); el.scrollIntoView({behavior: "smooth", block: "center"}); } }
+        function assignLabel(idx, type) { if(idx >= 0 && idx < lyricsData.length) { lyricsData[idx].type = type; renderGrid(); const el = document.getElementById(`box-${idx}`); if(el) el.classList.add("selected"); } }
+        function jumpToType(type) { let targetIdx = -1; for (let i = currentIndex + 1; i < lyricsData.length; i++) { if (lyricsData[i].type === type) { targetIdx = i; break; } } if (targetIdx === -1) { for (let i = 0; i <= currentIndex; i++) { if (lyricsData[i].type === type) { targetIdx = i; break; } } } if (targetIdx !== -1) fireLyric(targetIdx); }
+        function toggleClear() { isShowing = !isShowing; const btn = document.getElementById("btn-clear"); if(isShowing && currentIndex >= 0) { sendUpdate(lyricsData[currentIndex].text); btn.innerText = "CLEAR SCREEN (Ctrl+C)"; btn.style.background = "#dc3545"; highlightBox(currentIndex); } else { sendUpdate(""); btn.innerText = "SHOW SCREEN (Ctrl+C)"; btn.style.background = "#555"; document.querySelectorAll(".lyric-box").forEach(b => b.classList.remove("live-active")); } }
+        function updateSettings() {
+            document.getElementById("val-glow").innerText = document.getElementById("glow-input").value + "%";
+            document.getElementById("val-fade").innerText = document.getElementById("fade-input").value + "s";
+            
+            const payload = {
+                font: getCurrentFont(), // <--- INI ADA LAGI
+                theme: document.getElementById("theme-input").value, // <--- INI JUGA ADA
+                color: document.getElementById("color-input").value,
+                zoom: document.getElementById("zoom-input").value,
+                speed: document.getElementById("speed-input").value,
+                glow: parseInt(document.getElementById("glow-input").value),
+                fade: parseFloat(document.getElementById("fade-input").value),
+                trans: document.getElementById("trans-input").value,
+                show: isShowing
+            };
+            ws.send(JSON.stringify({ action: "update_display", payload: payload }));
+        }
+        function sendUpdate(textOverride) {
+            let nextTextVal = "";
+            if (lyricsData.length > 0 && currentIndex >= 0 && currentIndex < lyricsData.length - 1) {
+                nextTextVal = lyricsData[currentIndex + 1].text.substring(0, 50) + "..."; // Ambil 50 huruf aja biar ga penuh
+            } else {
+                nextTextVal = "(End of Song)";
+            }
+
+             const payload = {
+                font: getCurrentFont(), 
+                theme: document.getElementById("theme-input").value,
+                color: document.getElementById("color-input").value,
+                zoom: document.getElementById("zoom-input").value,
+                speed: document.getElementById("speed-input").value,
+                glow: parseInt(document.getElementById("glow-input").value),
+                fade: parseFloat(document.getElementById("fade-input").value),
+                trans: document.getElementById("trans-input").value,
+                show: isShowing,
+                next_text: nextTextVal
+            };
+            if (textOverride !== null) {
+                payload.text = textOverride;
+            } else {
+                const activeSlide = document.querySelector(".lyric-box.live-active"); // Pake selector box grid biar akurat
+                // Fallback kalau pakai cara lama
+                const txt = activeSlide ? lyricsData[currentIndex].text : ""; 
+                payload.text = txt;
+            }
+            ws.send(JSON.stringify({ action: "update_display", payload: payload }));
+        }
+        document.addEventListener("keydown", (e) => { if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return; const key = e.key.toUpperCase(); if (e.ctrlKey && key === 'C') { e.preventDefault(); toggleClear(); return; } if (e.shiftKey && currentIndex >= 0) { if (key === 'V') assignLabel(currentIndex, 'verse'); if (key === 'C') assignLabel(currentIndex, 'chorus'); if (key === 'P') assignLabel(currentIndex, 'pre'); if (key === 'B') assignLabel(currentIndex, 'bridge'); if (key === 'D') assignLabel(currentIndex, 'normal'); return; } if (!e.shiftKey && !e.ctrlKey) { if (key === 'V') jumpToType('verse'); if (key === 'C') jumpToType('chorus'); if (key === 'P') jumpToType('pre'); if (key === 'B') jumpToType('bridge'); if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); if (currentIndex < lyricsData.length - 1) fireLyric(currentIndex + 1); } if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); if (currentIndex > 0) fireLyric(currentIndex - 1); } } });
+        // --- TEXT FORMATTER ---
+        function formatText() {
+            const input = document.getElementById("raw-input");
+            if (!input.value) return;
+
+            let text = input.value;
+
+            // 1. Ubah ke Huruf Besar Semua
+            text = text.toUpperCase();
+
+            // 2. Hapus HANYA Titik (.) dan Koma (,) 
+            // Regex ini akan membuang . dan , di posisi manapun
+            // Tanda lain seperti - ' " ! ? akan TETAP ADA
+            text = text.replace(/[.,]/g, "");
+
+            // 3. Rapikan Spasi Ganda (biar gak ada spasi dobel jelek)
+            text = text.replace(/  +/g, ' ');
+
+            input.value = text;
+        }
+        // --- AUTO SCALE PREVIEW ---
+        // Biar previewnya muat di kotak kecil tanpa kepotong
+        function resizePreview() {
+            const wrapper = document.getElementById("preview-wrapper");
+            const frame = document.getElementById("preview-frame");
+            
+            if (!wrapper || !frame) return;
+
+            // Hitung lebar kotak controller
+            const wrapperWidth = wrapper.offsetWidth;
+            
+            // Hitung rasio pengecilan (Lebar Kotak / 1920)
+            const scale = wrapperWidth / 1920;
+            
+            // Terapkan pengecilan
+            frame.style.transform = `scale(${scale})`;
+        }
+
+        // Jalanin pas loading awal
+        window.addEventListener("load", resizePreview);
+        // Jalanin pas browser diubah ukurannya
+        window.addEventListener("resize", resizePreview);
+        
+        // Panggil sekali manual buat jaga-jaga
+        setTimeout(resizePreview, 500);
+        // --- MASS IMPORT FUNCTION ---
+        async function uploadFiles(input) {
+            if(input.files.length === 0) return;
+            const btn = document.querySelector("label[for='import-file']");
+            const txt = btn.innerText; btn.innerText = "⏳ ...";
+            
+            const formData = new FormData();
+            for(let f of input.files) formData.append("files", f);
+
+            try {
+                const res = await fetch("/import_songs", { method: "POST", body: formData });
+                const data = await res.json();
+                if(data.status === "success") {
+                    alert(`Import Sukses: ${data.count} lagu.`);
+                    fetchLibrary(); // Refresh List
+                } else alert("Gagal import.");
+            } catch(e) { alert("Error koneksi."); }
+            
+            btn.innerText = txt; input.value = "";
+        }
+        // --- LOWER THIRD CONFIG LOGIC ---
+        
+        function openLTConfig() {
+            document.getElementById('lt-modal').style.display = 'flex';
+            // Kirim config saat ini biar sync pas dibuka
+            sendLTConfig(); 
+        }
+
+        function closeLTConfig() {
+            document.getElementById('lt-modal').style.display = 'none';
+        }
+
+        function setLTPreset(pos) {
+            document.getElementById('lt-pos-mode').value = pos;
+            
+            // Default margins for presets
+            if (pos === 'bottom') document.getElementById('lt-margin').value = 80;
+            if (pos === 'top') document.getElementById('lt-margin').value = 80;
+            if (pos === 'center') document.getElementById('lt-margin').value = 0; // 0 offset from center
+            
+            sendLTConfig();
+        }
+
+        function nudgeLT(amount) {
+            const el = document.getElementById('lt-margin');
+            let val = parseInt(el.value) || 0;
+            
+            // Kalau mode Bottom/Top: Up nambah margin (naik), Down kurang margin (turun)
+            // Kalau mode Top: logika agak kebalik visualnya, tapi margin is margin.
+            // Kita bikin logika "Visual Up/Down"
+            
+            const mode = document.getElementById('lt-pos-mode').value;
+            
+            if (mode === 'bottom') val += amount; // Bottom + 10 = Naik
+            else if (mode === 'top') val -= amount; // Top - 10 = Naik (Mendekati atas)
+            else if (mode === 'center') val -= amount; // Center - 10 = Geser ke atas
+            
+            el.value = val;
+            sendLTConfig();
+        }
+
+        function sendLTConfig() {
+            const payload = {
+                position: document.getElementById('lt-pos-mode').value,
+                margin_y: parseInt(document.getElementById('lt-margin').value),
+                size: parseInt(document.getElementById('lt-size').value),
+                color: document.getElementById('lt-color').value,
+                shadow_x: parseInt(document.getElementById('lt-shadow-x').value),
+                shadow_y: parseInt(document.getElementById('lt-shadow-y').value),
+                shadow_color: document.getElementById('lt-shadow-color').value,
+                font: 'sans' // Bisa ditambah dropdown font nanti
+            };
+
+            ws.send(JSON.stringify({ 
+                action: "update_lowerthird", 
+                payload: payload 
+            }));
+        }
+        let ltPresetsData = {};
+
+        async function fetchLTPresets() {
+            const res = await fetch('/api/lt_presets');
+            const data = await res.json();
+            
+            ltPresetsData = data.presets || {};
+            const defaultName = data.default || "";
+            
+            // Update Dropdown
+            const select = document.getElementById("lt-preset-select");
+            select.innerHTML = '<option value="">-- Select Preset --</option>';
+            for (const name in ltPresetsData) {
+                const opt = document.createElement("option");
+                opt.value = name;
+                opt.innerText = name;
+                if (name === defaultName) opt.innerText += " (Default)";
+                select.appendChild(opt);
+            }
+
+            // Update Label Status
+            document.getElementById("lt-default-status").innerText = defaultName ? `Default: ${defaultName}` : "Default: None";
+
+            // AUTO LOAD DEFAULT if Fresh Load
+            // (Cek flag sederhana biar gak reload terus pas refresh library)
+            if (defaultName && !sessionStorage.getItem("lt_loaded")) {
+                loadPresetByName(defaultName);
+                sessionStorage.setItem("lt_loaded", "true");
+            }
+        }
+
+        async function saveCurrentLTPreset() {
+            const name = prompt("Nama Preset Baru:");
+            if (!name) return;
+
+            const config = getLTConfigFromUI();
+            
+            await fetch('/api/lt_presets', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name: name, config: config })
+            });
+            
+            alert("Preset disimpan!");
+            fetchLTPresets();
+        }
+
+        async function deleteLTPreset() {
+            const name = document.getElementById("lt-preset-select").value;
+            if (!name) return;
+            if (!confirm(`Hapus preset "${name}"?`)) return;
+
+            await fetch(`/api/lt_presets/${name}`, { method: 'DELETE' });
+            fetchLTPresets();
+        }
+
+        async function setLTDefault() {
+            const name = document.getElementById("lt-preset-select").value;
+            if (!name) { alert("Pilih preset dulu!"); return; }
+
+            await fetch(`/api/lt_presets/default/${name}`, { method: 'POST' });
+            alert(`"${name}" diset sebagai Default startup.`);
+            fetchLTPresets();
+        }
+
+        function loadSelectedLTPreset() {
+            const name = document.getElementById("lt-preset-select").value;
+            if (name) loadPresetByName(name);
+        }
+
+        function loadPresetByName(name) {
+            const config = ltPresetsData[name];
+            if (!config) return;
+
+            // Apply ke UI
+            document.getElementById('lt-pos-mode').value = config.position;
+            document.getElementById('lt-margin').value = config.margin_y;
+            document.getElementById('lt-size').value = config.size;
+            document.getElementById('lt-color').value = config.color;
+            document.getElementById('lt-shadow-x').value = config.shadow_x;
+            document.getElementById('lt-shadow-y').value = config.shadow_y;
+            document.getElementById('lt-shadow-color').value = config.shadow_color;
+            document.getElementById('lt-font').value = config.font || 'Montserrat';
+
+            // Kirim ke Layar
+            sendLTConfig();
+        }
+
+        function getLTConfigFromUI() {
+            return {
+                position: document.getElementById('lt-pos-mode').value,
+                margin_y: parseInt(document.getElementById('lt-margin').value),
+                size: parseInt(document.getElementById('lt-size').value),
+                color: document.getElementById('lt-color').value,
+                shadow_x: parseInt(document.getElementById('lt-shadow-x').value),
+                shadow_y: parseInt(document.getElementById('lt-shadow-y').value),
+                shadow_color: document.getElementById('lt-shadow-color').value,
+                font: document.getElementById('lt-font').value
+            };
+        }
+
+        // UPDATE fungsi sendLTConfig yang lama biar pake getLTConfigFromUI
+        function sendLTConfig() {
+            const payload = getLTConfigFromUI();
+            ws.send(JSON.stringify({ action: "update_lowerthird", payload: payload }));
+        }
+
+        let dispPresetsData = {};
+
+        async function fetchDisplayPresets() {
+            const res = await fetch('/api/display_presets');
+            const data = await res.json();
+            
+            dispPresetsData = data.presets || {};
+            const defaultName = data.default || "";
+            
+            const select = document.getElementById("disp-preset-select");
+            select.innerHTML = '<option value="">-- Select Preset --</option>';
+            for (const name in dispPresetsData) {
+                const opt = document.createElement("option");
+                opt.value = name;
+                opt.innerText = name;
+                if (name === defaultName) opt.innerText += " (Default)";
+                select.appendChild(opt);
+            }
+            document.getElementById("disp-default-status").innerText = defaultName ? `Default: ${defaultName}` : "Default: None";
+
+            // Auto load UI Display agar sesuai dengan Default Server (saat fresh start)
+            // Auto load UI Display agar sesuai dengan Default Server (saat fresh start)
+            if (defaultName && !sessionStorage.getItem("disp_loaded")) {
+                applyDisplayPresetToUI(dispPresetsData[defaultName]);
+                sessionStorage.setItem("disp_loaded", "true");
+                
+                // PAKSA UPDATE KE SERVER BIAR LAYAR JADI BENER
+                // Kasih delay dikit biar WebSocket siap dulu
+                setTimeout(() => {
+                    updateSettings();
+                    console.log("Auto-applying Default Display Preset...");
+                }, 500);
+            }
+        }
+
+        async function saveDisplayPreset() {
+            const name = prompt("Nama Preset Display:");
+            if (!name) return;
+
+            // Ambil config dari UI saat ini
+            const config = {
+                font: getCurrentFont(),
+                theme: document.getElementById("theme-input").value,
+                color: document.getElementById("color-input").value,
+                glow: document.getElementById("glow-input").value,
+                fade: document.getElementById("fade-input").value,
+                trans: document.getElementById("trans-input").value,
+                speed: document.getElementById("speed-input").value,
+                zoom: document.getElementById("zoom-input").value
+            };
+            
+            await fetch('/api/display_presets', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name: name, config: config })
+            });
+            alert("Display Preset Tersimpan!");
+            fetchDisplayPresets();
+        }
+
+        async function deleteDisplayPreset() {
+            const name = document.getElementById("disp-preset-select").value;
+            if (!name) return;
+            if (!confirm(`Hapus preset "${name}"?`)) return;
+            await fetch(`/api/display_presets/${name}`, { method: 'DELETE' });
+            fetchDisplayPresets();
+        }
+
+        async function setDefaultDisplayPreset() {
+            const name = document.getElementById("disp-preset-select").value;
+            if (!name) return alert("Pilih preset dulu!");
+            await fetch(`/api/display_presets/default/${name}`, { method: 'POST' });
+            alert("Default Display Updated!");
+            fetchDisplayPresets();
+        }
+
+        function loadSelectedDisplayPreset() {
+            const name = document.getElementById("disp-preset-select").value;
+            if (name && dispPresetsData[name]) {
+                applyDisplayPresetToUI(dispPresetsData[name]);
+                updateSettings(); // Kirim ke layar
+            }
+        }
+
+        function applyDisplayPresetToUI(config) {
+            if (!config) return;
+            // Restore Values to UI Inputs
+            document.getElementById("theme-input").value = config.theme || 'default';
+            document.getElementById("color-input").value = config.color || '#ffffff';
+            document.getElementById("glow-input").value = config.glow || 50;
+            document.getElementById("fade-input").value = config.fade || 0.5;
+            document.getElementById("trans-input").value = config.trans || 'fade';
+            document.getElementById("speed-input").value = config.speed || '30s';
+            document.getElementById("zoom-input").value = config.zoom || 'in';
+
+            // Font Logic
+            const fontSelect = document.getElementById("font-select");
+            const fontManual = document.getElementById("font-manual");
+            const savedFont = config.font || 'Cinzel';
+            
+            // Cek apakah font ada di dropdown
+            let fontFound = false;
+            for(let i=0; i<fontSelect.options.length; i++) {
+                if(fontSelect.options[i].value === savedFont) {
+                    fontSelect.value = savedFont;
+                    fontFound = true;
+                    break;
+                }
+            }
+            if(!fontFound) {
+                fontSelect.value = "custom";
+                fontManual.value = savedFont;
+            }
+            checkFontMode(); // Reset display input manual
+        }
+
+        // --- FOLDBACK CONFIG LOGIC ---
+        function openFBConfig() { document.getElementById('fb-modal').style.display = 'flex'; sendFBConfig(); }
+        function closeFBConfig() { document.getElementById('fb-modal').style.display = 'none'; }
+        
+        function setFBLayout(mode) {
+            document.getElementById('fb-layout').value = mode;
+            sendFBConfig();
+        }
+
+        function sendFBConfig() {
+            const payload = {
+                layout: document.getElementById('fb-layout').value,
+                curr_size: parseInt(document.getElementById('fb-curr-size').value),
+                curr_color: document.getElementById('fb-curr-color').value,
+                next_size: parseInt(document.getElementById('fb-next-size').value),
+                next_color: document.getElementById('fb-next-color').value,
+                bg_color: document.getElementById('fb-bg-color').value
+            };
+            ws.send(JSON.stringify({ action: "update_foldback", payload: payload }));
+        }
+        let fbPresetsData = {};
+
+        async function fetchFBPresets() {
+            const res = await fetch('/api/fb_presets');
+            const data = await res.json();
+            fbPresetsData = data.presets || {};
+            const defaultName = data.default || "";
+            
+            const select = document.getElementById("fb-preset-select");
+            select.innerHTML = '<option value="">-- Select Preset --</option>';
+            for (const name in fbPresetsData) {
+                const opt = document.createElement("option");
+                opt.value = name;
+                opt.innerText = name;
+                if(name === defaultName) opt.innerText += " (Default)";
+                select.appendChild(opt);
+            }
+            document.getElementById("fb-default-status").innerText = defaultName ? `Default: ${defaultName}` : "Default: None";
+
+            // UI Auto-load
+            if (defaultName && !sessionStorage.getItem("fb_loaded")) {
+                applyFBPresetToUI(fbPresetsData[defaultName]);
+                sessionStorage.setItem("fb_loaded", "true");
+            }
+        }
+
+        async function saveFBPreset() {
+            const name = prompt("Nama Preset Foldback:");
+            if (!name) return;
+            const config = getFBConfigFromUI();
+            await fetch('/api/fb_presets', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name: name, config: config, is_default: false })
+            });
+            alert("Foldback Preset Saved!");
+            fetchFBPresets();
+        }
+
+        async function deleteFBPreset() {
+            const name = document.getElementById("fb-preset-select").value;
+            if(!name || !confirm(`Delete "${name}"?`)) return;
+            await fetch(`/api/fb_presets/${name}`, { method: 'DELETE' });
+            fetchFBPresets();
+        }
+
+        async function setDefaultFBPreset() {
+            const name = document.getElementById("fb-preset-select").value;
+            if(!name) return alert("Pilih preset dulu!");
+            await fetch(`/api/fb_presets/default/${name}`, { method: 'POST' });
+            alert("Default Foldback Updated!");
+            fetchFBPresets();
+        }
+
+        function loadSelectedFBPreset() {
+            const name = document.getElementById("fb-preset-select").value;
+            if(name && fbPresetsData[name]) {
+                applyFBPresetToUI(fbPresetsData[name]);
+                sendFBConfig(); // Kirim ke layar
+            }
+        }
+
+        function applyFBPresetToUI(c) {
+            if(!c) return;
+            document.getElementById('fb-layout').value = c.layout;
+            document.getElementById('fb-curr-size').value = c.curr_size;
+            document.getElementById('fb-curr-color').value = c.curr_color;
+            document.getElementById('fb-next-size').value = c.next_size;
+            document.getElementById('fb-next-color').value = c.next_color;
+            document.getElementById('fb-bg-color').value = c.bg_color;
+        }
+
+        function getFBConfigFromUI() {
+            return {
+                layout: document.getElementById('fb-layout').value,
+                curr_size: parseInt(document.getElementById('fb-curr-size').value),
+                curr_color: document.getElementById('fb-curr-color').value,
+                next_size: parseInt(document.getElementById('fb-next-size').value),
+                next_color: document.getElementById('fb-next-color').value,
+                bg_color: document.getElementById('fb-bg-color').value
+            };
+        }
+
+        // UPDATE fungsi sendFBConfig biar pake getFBConfigFromUI
+        function sendFBConfig() {
+            const payload = getFBConfigFromUI();
+            ws.send(JSON.stringify({ action: "update_foldback", payload: payload }));
+        }
+    </script>
+</body>
+</html>
